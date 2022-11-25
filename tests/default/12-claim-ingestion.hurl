@@ -1,7 +1,7 @@
 ###
 # Get access_token from auth-server
 ###
-POST https://{{ACTIVE_HOSTNAME}}/mapview/uaa/oauth/token
+POST https://a-rft.us-east-1.ris-insus-rooftop-dev-v3.lexisnexisrisk.io/mapview/uaa/oauth/token
 Accept: application/json
 
 [BasicAuth]
@@ -21,7 +21,7 @@ access_token: jsonpath "$.access_token"
 ###
 # Upload file to S3
 ###
-POST https://{{ACTIVE_HOSTNAME}}/mapview/filewatch/file/test/upload
+POST https://a-rft.us-east-1.ris-insus-rooftop-dev-v3.lexisnexisrisk.io/mapview/filewatch/file/test/upload
 Authorization: Bearer {{access_token}}
 Accept: application/json
 Content-Type: multipart/form-data;
@@ -46,7 +46,7 @@ jsonpath "$.fileStatus" == "READY_TO_PROCESS"
 ###
 # Check file progress
 ###
-GET https://{{ACTIVE_HOSTNAME}}/mapview/filewatch/file/test/status
+GET https://a-rft.us-east-1.ris-insus-rooftop-dev-v3.lexisnexisrisk.io/mapview/filewatch/file/test/status
 Authorization: Bearer {{access_token}}
 Accept: application/json
 Content-Type: application/json
@@ -72,7 +72,7 @@ jsonpath "$.fileName" == "{{filenameWithoutExtension}}.xml"
 ###
 # Check data is inserted to ES
 ###
-POST https://{{ACTIVE_HOSTNAME}}/mapview/claim/query/customer
+POST https://a-rft.us-east-1.ris-insus-rooftop-dev-v3.lexisnexisrisk.io/mapview/claim/query/customer
 Authorization: Bearer {{access_token}}
 Accept: application/json
 Content-Type: application/json
