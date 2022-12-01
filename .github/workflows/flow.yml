@@ -38,4 +38,3 @@ jobs:
       - name: Run Hurl test
         run: |
           pwd
-          hurl --test --glob "tests/default/**/*.hurl" --glob "tests/$ENV/**/*.hurl" --file-root . --verbose

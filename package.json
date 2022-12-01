@@ -1,0 +1,29 @@
+{
+  "name": "literate-palm-tree",
+  "version": "0.0.0-development",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "semantic-release": "semantic-release"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nhattd97/literate-palm-tree.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Nhattd97/literate-palm-tree/issues"
+  },
+  "homepage": "https://github.com/Nhattd97/literate-palm-tree#readme",
+  "devDependencies": {
+    "semantic-release": "^19.0.5"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
