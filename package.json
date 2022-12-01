@@ -22,8 +22,5 @@
   "homepage": "https://github.com/Nhattd97/literate-palm-tree#readme",
   "devDependencies": {
     "semantic-release": "^19.0.5"
-  },
-  "publishConfig": {
-    "access": "restricted"
   }
 }
