@@ -30,5 +30,10 @@ jobs:
         run: |
           pwd
       - name: Convert HTML to Markdown
+        id: html2markdown
         uses: rknj/html2markdown@v1.1.0
-            
+        with:
+          html-file: "/home/runner/work/literate-palm-tree/literate-palm-tree/jacoco/index.html"
+      - name: Publish Coverage to build summary
+        run: |
+          ${{ steps.html2markdown.outputs.markdown-content }} >> $GITHUB_STEP_SUMMARY 
