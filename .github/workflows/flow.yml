@@ -36,4 +36,4 @@ jobs:
           html-file: "/home/runner/work/literate-palm-tree/literate-palm-tree/jacoco/index.html"
       - name: Publish Coverage to build summary
         run: |
-          ${{ steps.html2markdown.outputs.markdown-content }} >> $GITHUB_STEP_SUMMARY 
+          ${{ steps.html2markdown.outputs.markdown-file }} >> $GITHUB_STEP_SUMMARY 
