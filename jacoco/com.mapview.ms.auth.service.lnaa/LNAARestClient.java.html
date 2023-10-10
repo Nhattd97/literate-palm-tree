@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAARestClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa</a> &gt; <span class="el_source">LNAARestClient.java</span></div><h1>LNAARestClient.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa;
+
+import com.mapview.ms.auth.beans.UserDto;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.mapview.ms.auth.entity.User;
+import com.mapview.ms.auth.request.AdminChangeUserPasswordRequest;
+import com.mapview.ms.auth.request.RequestObject;
+import com.mapview.ms.auth.request.UnlockUserRequest;
+import com.mapview.ms.auth.request.UpdateUserNVPRequest;
+import com.mapview.ms.auth.request.UpdateUserRequest;
+import com.mapview.ms.auth.request.UpdateUserStatusRequest;
+import com.mapview.ms.auth.request.search.UserSearchCriteria;
+import com.mapview.ms.auth.service.lnaa.beans.LNAARequestSession;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAServiceRequest;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAServiceResponse;
+import com.mapview.ms.auth.service.lnaa.beans.add.LNAAAddUserRequest;
+import com.mapview.ms.auth.service.lnaa.beans.add.LNAAAddUserResponse;
+import com.mapview.ms.auth.service.lnaa.beans.detail.LNAAGetUserRequest;
+import com.mapview.ms.auth.service.lnaa.beans.detail.LNAAGetUserResponse;
+import com.mapview.ms.auth.service.lnaa.beans.login.LNAALoginRequest;
+import com.mapview.ms.auth.service.lnaa.beans.login.LNAALoginResponse;
+import com.mapview.ms.auth.service.lnaa.beans.nvp.LNAAUpdateUserNVPRequest;
+import com.mapview.ms.auth.service.lnaa.beans.password.user.LNAAAdminChangeUserPasswordRequest;
+import com.mapview.ms.auth.service.lnaa.beans.password.user.LNAAAdminResetPasswordRequest;
+import com.mapview.ms.auth.service.lnaa.beans.search.LNAAAdminSearchUserResponse;
+import com.mapview.ms.auth.service.lnaa.beans.search.LNAAUserSearchRequest;
+import com.mapview.ms.auth.service.lnaa.beans.unlock.LNAAAdminUnlockUserRequest;
+import com.mapview.ms.auth.service.lnaa.beans.update.LNAAUpdateUserRequest;
+import com.mapview.ms.auth.service.lnaa.beans.update.LNAAUpdateUserResponse;
+import com.mapview.ms.auth.service.lnaa.beans.update.status.LNAAUpdateUserStatusRequest;
+
+/**
+ * Class for handling rest service calls to LNAA
+ * @author cassva01
+ *
+ */
+@Component
+@SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L42">@Slf4j</span>
+<span class="fc" id="L43">public class LNAARestClient {</span>
+    @Autowired
+    LNAASettings lnaaSettings;
+    
+    @Autowired
+    LNAARestTemplate restTemplate;
+    
+    LNAARequestSession session;
+    
+    /**
+     * enum of LNAA services and corresponding response classes that will be used from MVG
+     */
+<span class="fc" id="L55">    public enum ServiceEndpoint    {</span>
+<span class="fc" id="L56">        AUTH_ADMIN_USER            (&quot;AuthUser&quot;,                     LNAALoginRequest.class,                   LNAALoginResponse.class),</span>
+<span class="fc" id="L57">        AUTH_USER     		       (&quot;AuthUser&quot;,                     LNAALoginRequest.class,                   LNAALoginResponse.class),</span>
+<span class="fc" id="L58">        ADMIN_ADD_USER             (&quot;AdminAddUser&quot;,                 LNAAAddUserRequest.class,                 LNAAAddUserResponse.class),</span>
+<span class="fc" id="L59">        ADMIN_GET_USER             (&quot;AdminGetUserData&quot;,             LNAAGetUserRequest.class,                 LNAAGetUserResponse.class),</span>
+<span class="fc" id="L60">    	ADMIN_UPDATE_USER          (&quot;AdminUpdateUser&quot;,              LNAAUpdateUserRequest.class,              LNAAUpdateUserResponse.class),</span>
+<span class="fc" id="L61">    	ADMIN_UPDATE_STATUS        (&quot;AdminUpdateUserStatus&quot;,        LNAAUpdateUserStatusRequest.class,        LNAAServiceResponse.class),</span>
+<span class="fc" id="L62">		ADMIN_SEARCH_USER          (&quot;AdminSearchUserReturnAllData&quot;, LNAAUserSearchRequest.class,              LNAAAdminSearchUserResponse.class),</span>
+<span class="fc" id="L63">		ADMIN_UPDATE_USER_NVP      (&quot;AdminUpdateUserNVP&quot;,           LNAAUpdateUserNVPRequest.class,           LNAAServiceResponse.class),</span>
+<span class="fc" id="L64">        ADMIN_CHANGE_USER_PASSWORD (&quot;AdminChangeUserPassword&quot;,      LNAAAdminChangeUserPasswordRequest.class, LNAAServiceResponse.class),</span>
+<span class="fc" id="L65">        ADMIN_REQUEST_USER_PASSWORD_RESET (&quot;AdminChangeUserPassword&quot;,LNAAAdminResetPasswordRequest.class,      LNAAServiceResponse.class),        </span>
+<span class="fc" id="L66">        ADMIN_UNLOCK_USER          (&quot;AdminUnlockUser&quot;,              LNAAAdminUnlockUserRequest.class,         LNAAServiceResponse.class);</span>
+
+        String function;
+        Class&lt;? extends LNAAServiceRequest&gt; requestClass;
+        Class&lt;? extends LNAAServiceResponse&gt; responseClass;
+        
+<span class="fc" id="L72">        ServiceEndpoint(String function, Class&lt;? extends LNAAServiceRequest&gt; requestClass, Class&lt;? extends LNAAServiceResponse&gt; responseClass)   {</span>
+<span class="fc" id="L73">            this.function = function;</span>
+<span class="fc" id="L74">            this.requestClass = requestClass;</span>
+<span class="fc" id="L75">            this.responseClass = responseClass;</span>
+<span class="fc" id="L76">        }</span>
+        
+        public String getFunction() {
+<span class="fc" id="L79">            return function;</span>
+        }
+        
+        public Class&lt;? extends LNAAServiceRequest&gt; getRequestClass() {
+<span class="fc" id="L83">            return requestClass;</span>
+        }
+        
+        public Class&lt;? extends LNAAServiceResponse&gt; getResponseClass() {
+<span class="fc" id="L87">            return responseClass;</span>
+        }
+        
+    }
+
+    /**
+     * Calls to individual LNAA services 
+     */
+    public LNAALoginResponse loginAsAdmin() throws LNAAException {
+<span class="fc" id="L96">    	return call(ServiceEndpoint.AUTH_ADMIN_USER, null);</span>
+    }
+    
+    public LNAALoginResponse authenticateUser(String username, String password) throws LNAAException {
+<span class="fc" id="L100">        User user = new User(username, password, null, null, null);</span>
+<span class="fc" id="L101">    	return call(ServiceEndpoint.AUTH_USER, user);</span>
+    }
+    
+    public LNAAAddUserResponse createUser(User user) throws LNAAException    {
+<span class="fc" id="L105">    	return call(ServiceEndpoint.ADMIN_ADD_USER, user);</span>
+    }
+    
+    public LNAAGetUserResponse getLNAAUser(UserDto user) throws LNAAException    {
+<span class="fc" id="L109">    	return call(ServiceEndpoint.ADMIN_GET_USER, user);</span>
+    }
+    
+    public LNAAUpdateUserResponse updateUser(UpdateUserRequest user) throws LNAAException    {
+<span class="fc" id="L113">    	return call(ServiceEndpoint.ADMIN_UPDATE_USER, user);</span>
+    }
+    
+    public LNAAServiceResponse updateUserStatus(UpdateUserStatusRequest user) throws LNAAException {
+<span class="fc" id="L117">    	return call(ServiceEndpoint.ADMIN_UPDATE_STATUS, user);</span>
+    }
+    
+    public LNAAServiceResponse changeUserPassword(AdminChangeUserPasswordRequest passwordRequest) throws LNAAException {
+<span class="fc" id="L121">        return call(ServiceEndpoint.ADMIN_CHANGE_USER_PASSWORD, passwordRequest);</span>
+    }
+    public LNAAServiceResponse updateUserBundle(UpdateUserNVPRequest request) throws LNAAException {
+<span class="nc" id="L124">        return call(ServiceEndpoint.ADMIN_UPDATE_USER_NVP, request);</span>
+    }
+    
+    public LNAAServiceResponse unlockUser(UnlockUserRequest request) throws LNAAException {
+<span class="nc" id="L128">        return call(ServiceEndpoint.ADMIN_UNLOCK_USER, request);</span>
+    }
+    
+    public LNAAServiceResponse resetPasswordRequest(AdminChangeUserPasswordRequest request) throws LNAAException {
+<span class="nc" id="L132">        return call(ServiceEndpoint.ADMIN_REQUEST_USER_PASSWORD_RESET, request);</span>
+    }
+    
+    
+    public LNAAAdminSearchUserResponse searchUser(UserSearchCriteria criteria) throws Exception    {
+    	
+<span class="fc" id="L138">    	LNAAAdminSearchUserResponse resp = call(ServiceEndpoint.ADMIN_SEARCH_USER, criteria);</span>
+    	
+    	// if we want to change to the basic search and retrieve NVPs for each returned user...
+//    	for (LNAAUserInfo userData : resp.getSearch_data().getUsers())	{
+//    		User user = new User();
+//    		user.setUsername(userData.getLogin_id());
+//    		LNAAGetUserResponse getResp = getLNAAUser(user);
+//    		userData.setUser_nvps(getResp.getUserData().getUser_nvps());
+//    	}
+    	
+<span class="fc" id="L148">    	return resp;</span>
+    
+    }
+    	
+    /**
+     * Functions to construct requests and make service calls.
+     */
+    private &lt;T extends RequestObject&gt; LNAAServiceRequest createRequest(ServiceEndpoint endpoint, T requestObject) throws LNAAException {
+
+    	
+    	try {
+<span class="fc" id="L159">    		return endpoint.getRequestClass()</span>
+<span class="fc" id="L160">				.getDeclaredConstructor()</span>
+<span class="fc" id="L161">				.newInstance()</span>
+<span class="fc" id="L162">				.init(lnaaSettings, requestObject, session);</span>
+<span class="nc" id="L163">    	} catch (Exception e)	{</span>
+<span class="nc" id="L164">    	    log.error(e.getMessage(), e);</span>
+<span class="nc" id="L165">    		throw new LNAAException(e.getMessage()); </span>
+    	}
+    	
+    }
+    
+
+    private &lt;T extends LNAAServiceResponse, K extends RequestObject&gt; T call(ServiceEndpoint endpoint, K requestObject) throws LNAAException	{
+<span class="fc" id="L172">    	LNAAServiceRequest request = createRequest(endpoint, requestObject);</span>
+<span class="fc" id="L173">    	request.validateRequest(requestObject);</span>
+<span class="fc" id="L174">    	return makeServiceCall(endpoint, request);</span>
+    	
+    }
+ 
+    /**
+     * Make the call to LNAA using the service endpoint and the LNAAServiceRequest request instance
+     */
+    public &lt;T extends LNAAServiceResponse&gt; T makeServiceCall(ServiceEndpoint endpoint, LNAAServiceRequest request) throws LNAAException {
+<span class="fc" id="L182">        log.info(&quot;Calling LNAA service with url: {} request body:{}&quot;, lnaaSettings.getEndpoint() + endpoint.getFunction(), request);</span>
+<span class="fc" id="L183">        LNAAServiceResponse response = restTemplate</span>
+<span class="fc" id="L184">                .postForEntity(lnaaSettings.getEndpoint() + endpoint.getFunction(), request, endpoint.getResponseClass())</span>
+<span class="fc" id="L185">                .getBody();</span>
+
+<span class="fc" id="L187">        log.info(&quot;LNAA response {}&quot;, response);</span>
+        
+<span class="fc" id="L189">        return (T)response;</span>
+        
+    }
+
+    public LNAARequestSession getSession() {
+<span class="fc" id="L194">        return session;</span>
+    }
+
+    public void setSession(LNAARequestSession session) {
+<span class="fc" id="L198">        this.session = session;</span>
+<span class="fc" id="L199">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAAUserLoginData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans</a> &gt; <span class="el_source">LNAAUserLoginData.java</span></div><h1>LNAAUserLoginData.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.Objects;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+<span class="fc" id="L9">public class LNAAUserLoginData {</span>
+
+
+    @JsonProperty(&quot;first_login_date&quot;)
+    private String firstLoginDate;
+
+    @JsonProperty(&quot;last_login_date&quot;)
+    private String lastLoginDate;
+
+    @JsonProperty(&quot;login_count&quot;)
+    private int loginCount;
+
+    @JsonProperty(&quot;password_expire_date&quot;)
+    private String expireDate;
+
+    @JsonProperty(&quot;wrong_password_login_attempts&quot;)
+    private String wrongLoginAttempts;
+
+    @JsonProperty(&quot;password_lockout&quot;)
+    private String lockout;
+    
+    @JsonProperty(&quot;reset_password_required&quot;)
+    private String resetRequired;
+
+    public String getFirstLoginDate() {
+<span class="fc" id="L34">        return firstLoginDate;</span>
+    }
+
+    public void setFirstLoginDate(String firstLoginDate) {
+<span class="fc" id="L38">        this.firstLoginDate = firstLoginDate;</span>
+<span class="fc" id="L39">    }</span>
+
+    public String getLastLoginDate() {
+<span class="fc" id="L42">        return lastLoginDate;</span>
+    }
+
+    public void setLastLoginDate(String lastLoginDate) {
+<span class="fc" id="L46">        this.lastLoginDate = lastLoginDate;</span>
+<span class="fc" id="L47">    }</span>
+
+    public int getLoginCount() {
+<span class="fc" id="L50">        return loginCount;</span>
+    }
+
+    public void setLoginCount(int loginCount) {
+<span class="fc" id="L54">        this.loginCount = loginCount;</span>
+<span class="fc" id="L55">    }</span>
+
+    public String getPasswordExpireDate() {
+<span class="fc" id="L58">        return expireDate;</span>
+    }
+
+    public void setPasswordExpireDate(String passwordExpireDate) {
+<span class="fc" id="L62">        this.expireDate = passwordExpireDate;</span>
+<span class="fc" id="L63">    }</span>
+
+    public String getPasswordLockout() {
+<span class="fc" id="L66">		return lockout;</span>
+	}
+
+	public void setPasswordLockout(String passwordLockout) {
+<span class="fc" id="L70">		this.lockout = passwordLockout;</span>
+<span class="fc" id="L71">	}</span>
+
+	public String getWrongPasswordLoginAttempts() {
+<span class="fc" id="L74">        return wrongLoginAttempts;</span>
+    }
+
+    public void setWrongPasswordLoginAttempts(String wrongPasswordLoginAttempts) {
+<span class="fc" id="L78">        this.wrongLoginAttempts = wrongPasswordLoginAttempts;</span>
+<span class="fc" id="L79">    }</span>
+
+    public String getResetPasswordRequired() {
+<span class="fc" id="L82">        return resetRequired;</span>
+    }
+
+
+    public void setResetPasswordRequired(String resetPasswordRequired) {
+<span class="fc" id="L87">        this.resetRequired = resetPasswordRequired;</span>
+<span class="fc" id="L88">    }</span>
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (this == o) return true;</span>
+<span class="fc bfc" id="L93" title="All 4 branches covered.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L94">        LNAAUserLoginData that = (LNAAUserLoginData) o;</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        return loginCount == that.loginCount &amp;&amp;</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">                Objects.equals(firstLoginDate, that.firstLoginDate) &amp;&amp;</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                Objects.equals(lastLoginDate, that.lastLoginDate) &amp;&amp;</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                Objects.equals(expireDate, that.expireDate) &amp;&amp;</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                Objects.equals(wrongLoginAttempts, that.wrongLoginAttempts) &amp;&amp;</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">                Objects.equals(lockout, that.lockout) &amp;&amp;                </span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">                Objects.equals(resetRequired, that.resetRequired);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L106">      return Objects.hash(firstLoginDate, lastLoginDate, loginCount, expireDate, wrongLoginAttempts, lockout, resetRequired);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L111">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L112">        sb.append(&quot;class LNAAUserLoginData {\n&quot;);</span>
+<span class="fc" id="L113">        sb.append(&quot;    firstLoginDate: &quot;).append(toIndentedString(firstLoginDate)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L114">        sb.append(&quot;    lastLoginDate: &quot;).append(toIndentedString(lastLoginDate)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L115">        sb.append(&quot;    loginCount: &quot;).append(toIndentedString(loginCount)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L116">        sb.append(&quot;    passwordExpireDate: &quot;).append(toIndentedString(expireDate)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L117">        sb.append(&quot;    wrongPasswordLoginAttempts: &quot;).append(toIndentedString(wrongLoginAttempts)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L118">        sb.append(&quot;    passwordLockout: &quot;).append(toIndentedString(lockout)).append(&quot;\n&quot;);        </span>
+<span class="fc" id="L119">        sb.append(&quot;    resetPasswordRequired: &quot;).append(toIndentedString(resetRequired)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L120">        sb.append(&quot;}&quot;);</span>
+<span class="fc" id="L121">        return sb.toString();</span>
+
+    }
+
+    private String toIndentedString(Object o) {
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (o == null) {</span>
+<span class="fc" id="L127">            return &quot;null&quot;;</span>
+        }
+<span class="fc" id="L129">        return o.toString().replace(&quot;\n&quot;, &quot;\n    &quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

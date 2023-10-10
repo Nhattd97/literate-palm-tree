@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AsymmetricTokenConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.enhancer.impl</a> &gt; <span class="el_source">AsymmetricTokenConverter.java</span></div><h1>AsymmetricTokenConverter.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.enhancer.impl;
+
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
+
+import com.mapview.ms.auth.enhancer.AbstractTokenConverter;
+import com.mapview.ms.auth.secrets.JwtKubernetesSecret;
+
+public class AsymmetricTokenConverter extends AbstractTokenConverter {
+    
+<span class="fc" id="L18">    private static final Logger LOGGER = LoggerFactory.getLogger(AsymmetricTokenConverter.class);</span>
+    
+    private final static String PUB_FORMAT = &quot;%d-%d.pub&quot;;
+    
+    private final String pubPath;
+    private final String keyStorePath;
+    private final String alias;
+    
+<span class="fc" id="L26">    public AsymmetricTokenConverter(String keyStorePath, String pubPath, String alias) {</span>
+<span class="fc" id="L27">        setAccessTokenConverter(userDetailAuthenticationConverter());</span>
+<span class="fc" id="L28">        this.keyStorePath = keyStorePath;</span>
+<span class="fc" id="L29">        this.pubPath = pubPath;</span>
+<span class="fc" id="L30">        this.alias = alias;</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    public void defineSigner() {
+        try {
+<span class="fc" id="L36">            Integer week = Integer.valueOf(new SimpleDateFormat(&quot;w&quot;).format(new Date())); </span>
+<span class="fc" id="L37">            Integer year = Integer.valueOf(new SimpleDateFormat(&quot;y&quot;).format(new Date()));</span>
+            
+<span class="fc" id="L39">            FileSystemResource jksResource = this.createKSResource(week, year);</span>
+<span class="fc" id="L40">            this.kid = JwtKubernetesSecret.kidFormat(week, year);</span>
+            
+<span class="fc" id="L42">            final KeyStoreKeyFactory ksKeyFactory = this.createKeyStoreKeyFactory(jksResource, week, year);</span>
+            
+<span class="fc" id="L44">            super.setKeyPair(ksKeyFactory.getKeyPair(this.alias));</span>
+            
+<span class="fc" id="L46">        } catch (Exception e) {</span>
+<span class="fc" id="L47">            LOGGER.error(&quot;Error setting the keypair &quot; + e.getMessage(), e);</span>
+<span class="fc" id="L48">        }</span>
+<span class="fc" id="L49">    }</span>
+    
+    public FileSystemResource createPubSystemResource(Integer week, Integer year) {
+<span class="nc" id="L52">        return new FileSystemResource(this.pubPath + &quot;/&quot; + publicFormat(week, year));</span>
+    }
+    
+    private static String publicFormat(Integer week, Integer year) {
+<span class="nc" id="L56">        return String.format(PUB_FORMAT, week, year);</span>
+    }
+    
+    public FileSystemResource createKSResource(Integer week, Integer year) 
+            throws IOException {
+<span class="fc" id="L61">        return new FileSystemResource(this.keyStorePath + &quot;/&quot; + JwtKubernetesSecret.jksFormat(week, year));</span>
+    }
+    
+    public KeyStoreKeyFactory createKeyStoreKeyFactory(FileSystemResource jksResource, Integer week, Integer year) 
+            throws IOException {
+<span class="fc" id="L66">        return new KeyStoreKeyFactory(jksResource, new String(getBytePass(week, year)).toCharArray());</span>
+    }
+    
+    private byte[] getBytePass(Integer week, Integer year) throws IOException {
+<span class="fc" id="L70">        final FileSystemResource pubResources = this.createPassResource(week, year);</span>
+        try {
+<span class="fc" id="L72">            return IOUtils.toByteArray(pubResources.getInputStream());</span>
+        } finally {
+<span class="fc" id="L74">            pubResources.getInputStream().close();</span>
+        }
+    }
+    
+    public FileSystemResource createPassResource(Integer week, Integer year) 
+            throws IOException {
+<span class="fc" id="L80">        return new FileSystemResource(this.keyStorePath + &quot;/&quot; + JwtKubernetesSecret.passFormat(week, year));</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

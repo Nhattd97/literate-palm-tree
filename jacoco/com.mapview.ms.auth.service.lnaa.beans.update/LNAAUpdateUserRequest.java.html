@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAAUpdateUserRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans.update</a> &gt; <span class="el_source">LNAAUpdateUserRequest.java</span></div><h1>LNAAUpdateUserRequest.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans.update;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import com.mapview.ms.auth.request.UpdateUserRequest;
+import com.mapview.ms.auth.service.lnaa.LNAAException;
+import com.mapview.ms.auth.service.lnaa.LNAASettings;
+import com.mapview.ms.auth.service.lnaa.beans.LNAARequestSession;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAServiceRequest;
+
+public class LNAAUpdateUserRequest extends LNAAServiceRequest&lt;UpdateUserRequest&gt; {
+	private static final String FIRST_NAME = &quot;first_name&quot;;
+	private static final String LAST_NAME = &quot;last_name&quot;;
+	private static final String EMAIL_ADDRESS = &quot;email_address&quot;;
+	private static final String RETURN_DATA = &quot;1&quot;;
+
+	private LNAAUpdateUserData data;
+	private LNAARequestSession session;
+
+<span class="fc" id="L21">	public LNAAUpdateUserRequest() {</span>
+
+<span class="fc" id="L23">	}</span>
+
+	@Override
+	public void validateRequest(UpdateUserRequest request) throws LNAAException {
+
+<span class="fc" id="L28">	}</span>
+
+	public LNAAServiceRequest&lt;UpdateUserRequest&gt; init(LNAASettings lnaaSettings, UpdateUserRequest user, LNAARequestSession session)	{
+
+<span class="fc" id="L32">		LNAAUpdateUserRequest request = new LNAAUpdateUserRequest();</span>
+<span class="fc" id="L33">		LNAAUpdateUserData data = new LNAAUpdateUserData();</span>
+<span class="fc" id="L34">		data.setDomain(lnaaSettings.getUser_domain());</span>
+<span class="fc" id="L35">		data.setTimeout(lnaaSettings.getTimeout());</span>
+<span class="fc" id="L36">		data.setLoginId(user.getUsername() + &quot;@&quot; + lnaaSettings.getUser_domain());</span>
+<span class="fc" id="L37">		data.setReturnUserData(RETURN_DATA);</span>
+<span class="fc" id="L38">		List&lt;LNAAUpdateValue&gt; updateValues = getUpdateValues(user);</span>
+<span class="fc" id="L39">		data.setUpdateValues(updateValues);</span>
+<span class="fc" id="L40">		request.setData(data);</span>
+<span class="fc" id="L41">		request.setSession(session);</span>
+
+<span class="fc" id="L43">		return request;</span>
+
+	}
+	
+<span class="fc" id="L47">	public LNAAUpdateUserRequest(LNAAUpdateUserData data, LNAARequestSession session) {</span>
+<span class="fc" id="L48">		this.data = data;</span>
+<span class="fc" id="L49">		this.session = session;</span>
+<span class="fc" id="L50">	}</span>
+
+	public static LNAAUpdateUserRequest createUpdateUserRequest(LNAASettings lnaaSettings, UpdateUserRequest user,
+			LNAARequestSession session) {
+<span class="fc" id="L54">		LNAAUpdateUserRequest request = new LNAAUpdateUserRequest();</span>
+<span class="fc" id="L55">		LNAAUpdateUserData data = new LNAAUpdateUserData();</span>
+<span class="fc" id="L56">		data.setDomain(lnaaSettings.getDomain());</span>
+<span class="fc" id="L57">		data.setTimeout(lnaaSettings.getTimeout());</span>
+<span class="fc" id="L58">		data.setLoginId(user.getUsername());</span>
+<span class="fc" id="L59">		data.setReturnUserData(RETURN_DATA);</span>
+<span class="fc" id="L60">		List&lt;LNAAUpdateValue&gt; updateValues = getUpdateValues(user);</span>
+<span class="fc" id="L61">		data.setUpdateValues(updateValues);</span>
+<span class="fc" id="L62">		request.setData(data);</span>
+<span class="fc" id="L63">		request.setSession(session);</span>
+
+<span class="fc" id="L65">		return request;</span>
+	}
+
+	private static List&lt;LNAAUpdateValue&gt; getUpdateValues(UpdateUserRequest vm) {
+<span class="fc" id="L69">		List&lt;LNAAUpdateValue&gt; updateValueList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L70">		updateValueList.add(getUpdateValue(LAST_NAME, vm.getLastname()));</span>
+<span class="fc" id="L71">		updateValueList.add(getUpdateValue(FIRST_NAME, vm.getFirstname()));</span>
+<span class="fc" id="L72">		updateValueList.add(getUpdateValue(EMAIL_ADDRESS, vm.getEmail()));</span>
+<span class="fc" id="L73">		return updateValueList;</span>
+
+	}
+
+	private static LNAAUpdateValue getUpdateValue(String field, String value) {
+<span class="fc" id="L78">		LNAAUpdateValue updateValue = new LNAAUpdateValue(field, value);</span>
+<span class="fc" id="L79">		return updateValue;</span>
+	}
+
+	public LNAAUpdateUserData getData() {
+<span class="fc" id="L83">		return data;</span>
+	}
+
+	public void setData(LNAAUpdateUserData data) {
+<span class="fc" id="L87">		this.data = data;</span>
+<span class="fc" id="L88">	}</span>
+
+	public LNAARequestSession getSession() {
+<span class="fc" id="L91">		return session;</span>
+	}
+
+	public void setSession(LNAARequestSession session) {
+<span class="fc" id="L95">		this.session = session;</span>
+<span class="fc" id="L96">	}</span>
+
+	@Override
+	public boolean equals(Object o) {
+<span class="fc bfc" id="L100" title="All 2 branches covered.">		if (this == o)</span>
+<span class="fc" id="L101">			return true;</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">		if (!(o instanceof LNAAUpdateUserRequest))</span>
+<span class="fc" id="L103">			return false;</span>
+<span class="fc" id="L104">		LNAAUpdateUserRequest that = (LNAAUpdateUserRequest) o;</span>
+<span class="fc bfc" id="L105" title="All 4 branches covered.">		return Objects.equals(getData(), that.getData()) &amp;&amp; Objects.equals(getSession(), that.getSession());</span>
+	}
+
+	@Override
+	public int hashCode() {
+<span class="fc" id="L110">		return Objects.hash(getData(), getSession());</span>
+	}
+
+	@Override
+	public String toString() {
+<span class="fc" id="L115">		StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L116">		sb.append(&quot;class LNAAUpdateUserRequest {\n&quot;);</span>
+<span class="fc" id="L117">		sb.append(&quot;    &quot;).append(toIndentedString(super.toString())).append(&quot;\n&quot;);</span>
+<span class="fc" id="L118">		sb.append(&quot;    data: &quot;).append(toIndentedString(data)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L119">		sb.append(&quot;    session: &quot;).append(toIndentedString(session)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L120">		sb.append(&quot;}&quot;);</span>
+<span class="fc" id="L121">		return sb.toString();</span>
+	}
+
+	/**
+	 * Convert the given object to string with each line indented by 4 spaces
+	 * (except the first line).
+	 */
+	private String toIndentedString(Object o) {
+<span class="fc bfc" id="L129" title="All 2 branches covered.">		if (o == null) {</span>
+<span class="fc" id="L130">			return &quot;null&quot;;</span>
+		}
+<span class="fc" id="L132">		return o.toString().replace(&quot;\n&quot;, &quot;\n    &quot;);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAAEncode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.beans</a> &gt; <span class="el_source">LNAAEncode.java</span></div><h1>LNAAEncode.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.beans;
+
+import org.apache.commons.lang3.StringUtils;
+
+<span class="fc" id="L5">public enum LNAAEncode {</span>
+<span class="fc" id="L6">    AT_RISK(&quot;@Risk&quot;, &quot;____Risk&quot;),</span>
+<span class="fc" id="L7">    AT_EU(&quot;@eu&quot;, &quot;____eu&quot;),</span>
+<span class="fc" id="L8">    AT_CHAR(&quot;@&quot;, &quot;____&quot;),</span>
+<span class="fc" id="L9">    DOT_CHAR(&quot;.&quot;, &quot;___&quot;),</span>
+<span class="fc" id="L10">    MINUS_CHAR(&quot;-&quot;, &quot;__&quot;);</span>
+
+    private String value;
+    private String encode;
+    
+<span class="fc" id="L15">    LNAAEncode(String value, String encode) {</span>
+<span class="fc" id="L16">        this.value = value;</span>
+<span class="fc" id="L17">        this.encode = encode;</span>
+<span class="fc" id="L18">    }</span>
+
+    public String getValue() {
+<span class="fc" id="L21">        return value;</span>
+    }
+
+    public String getEncode() {
+<span class="fc" id="L25">        return encode;</span>
+    }
+
+    public static String encode(String text) {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        for (LNAAEncode item : LNAAEncode.values()) {</span>
+<span class="fc" id="L30">            text = StringUtils.replaceIgnoreCase(text, item.getValue(), item.getEncode());</span>
+        }
+<span class="fc" id="L32">        return text;</span>
+    }
+
+    public static String decode(String text) {
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        for (LNAAEncode item : LNAAEncode.values()) {</span>
+<span class="fc" id="L37">            text = StringUtils.replaceIgnoreCase(text, item.getEncode(), item.getValue());</span>
+        }
+<span class="fc" id="L39">        return text;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

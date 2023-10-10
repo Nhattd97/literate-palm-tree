@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service</a> &gt; <span class="el_source">UserServiceImpl.java</span></div><h1>UserServiceImpl.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.NotImplementedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+
+import com.mapview.ms.auth.beans.UserDto;
+import com.mapview.ms.auth.controller.UserRequest;
+import com.mapview.ms.auth.entity.User;
+import com.mapview.ms.auth.entity.UserRequestResponse;
+import com.mapview.ms.auth.entity.UserSearchResponse;
+import com.mapview.ms.auth.repository.UserRepository;
+import com.mapview.ms.auth.request.AdminChangeUserPasswordRequest;
+import com.mapview.ms.auth.request.ChangePasswordRequest;
+import com.mapview.ms.auth.request.RequestSelectRole;
+import com.mapview.ms.auth.request.ResetPasswordRequest;
+import com.mapview.ms.auth.request.UnlockUserRequest;
+import com.mapview.ms.auth.request.UpdateUserRequest;
+import com.mapview.ms.auth.request.UpdateUserStatusRequest;
+import com.mapview.ms.auth.request.search.UserSearchCriteria;
+import com.mapview.ms.auth.response.AdminChangeUserPasswordResponse;
+import com.mapview.ms.auth.response.ChangePasswordResponse;
+import com.mapview.ms.auth.response.CreateBatchResponse;
+import com.mapview.ms.auth.response.CreateUserResponse;
+import com.mapview.ms.auth.response.GetUserResponse;
+import com.mapview.ms.auth.response.GetUserResponseBuilder;
+import com.mapview.ms.auth.response.ResetPasswordResponse;
+import com.mapview.ms.auth.response.UnlockUserResponse;
+import com.mapview.ms.auth.response.UpdateUserResponse;
+import com.mapview.ms.auth.response.UpdateUserStatusResponse;
+
+/**
+ * UserServiceImpl - User Service Implementation
+ *
+ */
+
+@Component(&quot;userServiceImpl&quot;)
+public class UserServiceImpl implements UserService {
+
+<span class="fc" id="L51">	private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);</span>
+
+<span class="fc" id="L53">	private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder();</span>
+
+	@Autowired
+	UserRepository userRepository;
+
+<span class="fc" id="L58">    public UserServiceImpl()    {</span>
+<span class="fc" id="L59">        LOGGER.info(&quot;Default service initialised&quot;);</span>
+<span class="fc" id="L60">    }</span>
+    
+	@Override
+	public CreateUserResponse create(UserRequestResponse userRequest) {
+<span class="fc" id="L64">		LOGGER.info(&quot;Creating new user. Username : &quot; + userRequest.getUsername());</span>
+
+<span class="fc" id="L66">		boolean existing = userRepository.existsById(userRequest.getUsername());</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">		Assert.isTrue(!existing, &quot;User already exists: &quot; + userRequest.getUsername());</span>
+<span class="fc" id="L68">		String password = userRequest.getPassword();			</span>
+<span class="fc" id="L69">		User user = new User();</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">		if (!StringUtils.isEmpty(userRequest.getPassword())) {</span>
+<span class="fc" id="L71">		    user.setPassword(ENCODER.encode(password));</span>
+        }		
+<span class="fc" id="L73">		user.setUsername(userRequest.getUsername());</span>
+<span class="fc" id="L74">		user.setFirstname(userRequest.getFirstname());</span>
+<span class="fc" id="L75">		user.setLastname(userRequest.getLastname());</span>
+<span class="fc" id="L76">		user.setEmail(userRequest.getEmail());</span>
+<span class="fc" id="L77">		user.setLanguage(userRequest.getLanguage());</span>
+<span class="fc" id="L78">		user.setBundles(userRequest.getBundles());</span>
+<span class="fc" id="L79">		user.setEmail(userRequest.getEmail());</span>
+<span class="fc" id="L80">		user.setAccountNumber(userRequest.getAccountDetails().getRequestAccount());</span>
+<span class="fc" id="L81">		user.setCustomerNumber(userRequest.getAccountDetails().getRequestCust());</span>
+
+<span class="fc" id="L83">		userRepository.save(user);</span>
+<span class="fc" id="L84">		CreateUserResponse response = new CreateUserResponse();</span>
+<span class="fc" id="L85">		return response;</span>
+	}
+
+	@Override
+	public User loadUserByUsername(String username) throws UsernameNotFoundException {
+<span class="fc" id="L90">		LOGGER.info(&quot;New loging request : &quot; + username);</span>
+
+<span class="fc" id="L92">		User user = userRepository.findById(username)</span>
+<span class="fc" id="L93">				.orElseThrow(() -&gt; new UsernameNotFoundException(&quot;Wrong credentials. Incorrect Username/Password&quot;));</span>
+
+<span class="fc" id="L95">		return user;</span>
+	}
+
+	@Override
+	public void deleteAll() {
+<span class="fc" id="L100">		userRepository.deleteAll();</span>
+<span class="fc" id="L101">	}</span>
+
+	@Override
+	public GetUserResponse fetchByUsername(UserDto user){
+<span class="fc" id="L105">		User currUser = userRepository.findById(user.getUsername())</span>
+<span class="pc" id="L106">				.orElseThrow(() -&gt; new UsernameNotFoundException(&quot;Wrong credentials. Incorrect Username/Password&quot;));</span>
+
+<span class="fc" id="L108">		return new GetUserResponseBuilder().withUser(currUser).build();</span>
+	}
+
+	@Override
+	public CreateBatchResponse createBatch(UserRequest request){
+
+<span class="fc" id="L114">    	List&lt;UserDto&gt; userDtos = request.getUsers();</span>
+<span class="fc" id="L115">		List&lt;User&gt; users = userDtos.stream().map(userDto -&gt; {</span>
+<span class="fc" id="L116">			LOGGER.info(&quot;Creating new user. Username : &quot; + userDto.getUsername());</span>
+
+<span class="fc" id="L118">			Assert.isTrue(isValidPassword(userDto.getPassword()), &quot;Invalid password: &quot; + userDto.getPassword());</span>
+
+<span class="fc" id="L120">			String hash = ENCODER.encode(userDto.getPassword());</span>
+
+<span class="fc" id="L122">			User user = new User();</span>
+<span class="fc" id="L123">			user.setEmail(userDto.getEmail());</span>
+<span class="fc" id="L124">			user.setCustomerNumber(userDto.getCustomerNumber());</span>
+<span class="fc" id="L125">			user.setAccountNumber(userDto.getAccountNumber());</span>
+<span class="fc" id="L126">			user.setBundles(userDto.getBundles());</span>
+<span class="fc" id="L127">			user.setExpireDate(userDto.getExpireDate());</span>
+<span class="fc" id="L128">			user.setFirstname(userDto.getFirstname());</span>
+<span class="fc" id="L129">			user.setLastname(userDto.getLastname());</span>
+<span class="fc" id="L130">			user.setLanguage(userDto.getLanguage());</span>
+<span class="fc" id="L131">			user.setPassword(hash);</span>
+<span class="fc" id="L132">			user.setResetRequired(userDto.getResetRequired());</span>
+<span class="fc" id="L133">			user.setUsername(userDto.getUsername());</span>
+<span class="fc" id="L134">			user.setWrongLoginAttempts(userDto.getWrongLoginAttempts());</span>
+<span class="fc" id="L135">			user.setAccountDetails(userDto.getAccountDetails());</span>
+
+<span class="fc" id="L137">			return user;</span>
+<span class="fc" id="L138">		}).collect(Collectors.toList());</span>
+
+<span class="fc" id="L140">		userRepository.saveAll(users);</span>
+<span class="fc" id="L141">		CreateBatchResponse response = new CreateBatchResponse(true);</span>
+<span class="fc" id="L142">		return response;</span>
+	}
+
+	private boolean isValidPassword(String password) {
+<span class="fc bfc" id="L146" title="All 2 branches covered.">		return !StringUtils.isEmpty(password) ? true : false;</span>
+	}
+
+	@Override
+	public UpdateUserResponse updateUser(UpdateUserRequest user){
+<span class="fc" id="L151">		throw new NotImplementedException(&quot;UpdateUser function is not supported&quot;);</span>
+	}
+
+	@Override
+	public UserSearchResponse search(UserSearchCriteria criteria) {
+<span class="fc" id="L156">		throw new NotImplementedException(&quot;Search function is not supported&quot;);</span>
+	}
+	
+    @Override
+    public UpdateUserStatusResponse updateUserStatus(UpdateUserStatusRequest user) {
+<span class="fc" id="L161">        throw new NotImplementedException(&quot;UpdateUserStatus function is not supported&quot;);</span>
+    }
+
+    @Override
+    public AdminChangeUserPasswordResponse changeUserPassword(AdminChangeUserPasswordRequest request) {
+<span class="fc" id="L166">        throw new NotImplementedException(&quot;ChangeUserPassword function is not supported&quot;);</span>
+    }
+
+	@Override
+	public UnlockUserResponse unlockUser(UnlockUserRequest request) {
+<span class="fc" id="L171">		throw new NotImplementedException(&quot;unlockUser function is not supported&quot;);</span>
+	}
+
+	@Override
+	public ResetPasswordResponse resetPasswordRequest(ResetPasswordRequest request) {
+<span class="fc" id="L176">		throw new NotImplementedException(&quot;resetPassword function is not supported&quot;);</span>
+	}
+
+	@Override
+	public ChangePasswordResponse changePassword(String username, ChangePasswordRequest request) {
+<span class="fc" id="L181">		throw new NotImplementedException(&quot;changePassword function is not supported&quot;);</span>
+	}
+
+	@Override
+	public OAuth2AccessToken selectRole(OAuth2Authentication authentication, RequestSelectRole request) {
+<span class="fc" id="L186">		throw new NotImplementedException(&quot;selectRole function is not supported&quot;);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

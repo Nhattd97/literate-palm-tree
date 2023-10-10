@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAASearchReturnDataFlags.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans.search</a> &gt; <span class="el_source">LNAASearchReturnDataFlags.java</span></div><h1>LNAASearchReturnDataFlags.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans.search;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+<span class="fc" id="L5">public class LNAASearchReturnDataFlags {</span>
+
+    @JsonProperty(&quot;login_data&quot;)
+	private String loginData;
+	
+	private String roles;
+	
+	private String nvps;
+
+	public String getLoginData() {
+<span class="fc" id="L15">		return loginData;</span>
+	}
+
+	public void setLoginData(String loginData) {
+<span class="fc" id="L19">		this.loginData = loginData;</span>
+<span class="fc" id="L20">	}</span>
+
+	public String getRoles() {
+<span class="fc" id="L23">		return roles;</span>
+	}
+
+	public void setRoles(String roles) {
+<span class="fc" id="L27">		this.roles = roles;</span>
+<span class="fc" id="L28">	}</span>
+
+	public String getNvps() {
+<span class="fc" id="L31">		return nvps;</span>
+	}
+
+	public void setNvps(String nvps) {
+<span class="fc" id="L35">		this.nvps = nvps;</span>
+<span class="fc" id="L36">	}</span>
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

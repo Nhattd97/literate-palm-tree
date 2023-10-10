@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAAValidationErrorCode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.exceptions</a> &gt; <span class="el_source">LNAAValidationErrorCode.java</span></div><h1>LNAAValidationErrorCode.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.exceptions;
+
+
+<span class="fc" id="L4">public enum LNAAValidationErrorCode {</span>
+<span class="fc" id="L5">	UNEXPECTED_ERROR	(-2, &quot;MVG160&quot;), </span>
+<span class="fc" id="L6">	UPDATE_SUCCESS		(0, null), </span>
+<span class="fc" id="L7">	VALIDATION_ERROR	(5, &quot;MVG165&quot;);</span>
+
+	private int code;
+	private String mvgCode;
+
+<span class="fc" id="L12">	LNAAValidationErrorCode(int code, String mvgCode) {</span>
+<span class="fc" id="L13">		this.code = code;</span>
+<span class="fc" id="L14">		this.mvgCode = mvgCode;</span>
+<span class="fc" id="L15">	}</span>
+
+	public int getCode() {
+<span class="fc" id="L18">		return code;</span>
+	}
+
+	public String getMvgCode() {
+<span class="fc" id="L22">		return mvgCode;</span>
+	}
+
+	public static String getMvgCode(int code) {
+<span class="fc bfc" id="L26" title="All 2 branches covered.">		for (LNAAValidationErrorCode status : LNAAValidationErrorCode.values()) {</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">			if (status.getCode() == code) {</span>
+<span class="fc" id="L28">				return status.getMvgCode();</span>
+			}
+		}
+<span class="fc" id="L31">		return UNEXPECTED_ERROR.getMvgCode();</span>
+	}
+
+	public static LNAAValidationErrorCode getLNAAValidationErrorCode(int statusCode) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">		for (LNAAValidationErrorCode status : LNAAValidationErrorCode.values()) {</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">			if (status.getCode() == statusCode) {</span>
+<span class="fc" id="L37">				return status;</span>
+			}
+		}
+<span class="fc" id="L40">		return UNEXPECTED_ERROR;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

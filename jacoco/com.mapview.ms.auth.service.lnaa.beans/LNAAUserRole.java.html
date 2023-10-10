@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAAUserRole.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans</a> &gt; <span class="el_source">LNAAUserRole.java</span></div><h1>LNAAUserRole.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.Objects;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+<span class="fc" id="L9">public class LNAAUserRole {</span>
+
+    @JsonProperty(&quot;role_name&quot;)
+    private String roleName;
+
+    @JsonProperty(&quot;role_code&quot;)
+    private String roleCode;
+
+    @JsonProperty(&quot;role_description&quot;)
+    private String roleDescription;
+
+    @JsonProperty(&quot;group_code&quot;)
+    private String groupCode;
+
+    public String getRoleName() {
+<span class="fc" id="L24">        return roleName;</span>
+    }
+
+    public void setRoleName(String roleName) {
+<span class="fc" id="L28">        this.roleName = roleName;</span>
+<span class="fc" id="L29">    }</span>
+
+    public String getRoleCode() {
+<span class="fc" id="L32">        return roleCode;</span>
+    }
+
+    public void setRoleCode(String roleCode) {
+<span class="fc" id="L36">        this.roleCode = roleCode;</span>
+<span class="fc" id="L37">    }</span>
+
+    public String getRoleDescription() {
+<span class="fc" id="L40">        return roleDescription;</span>
+    }
+
+    public void setRoleDescription(String roleDescription) {
+<span class="fc" id="L44">        this.roleDescription = roleDescription;</span>
+<span class="fc" id="L45">    }</span>
+
+    public String getGroupCode() {
+<span class="fc" id="L48">        return groupCode;</span>
+    }
+
+    public void setGroupCode(String groupCode) {
+<span class="fc" id="L52">        this.groupCode = groupCode;</span>
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (this == o) return true;</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (!(o instanceof LNAAUserRole)) return false;</span>
+<span class="fc" id="L59">        LNAAUserRole userRole = (LNAAUserRole) o;</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        return Objects.equals(roleName, userRole.roleName) &amp;&amp;</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                Objects.equals(roleCode, userRole.roleCode) &amp;&amp;</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                Objects.equals(roleDescription, userRole.roleDescription) &amp;&amp;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                Objects.equals(groupCode, userRole.groupCode);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L68">        return Objects.hash(roleName, roleCode, roleDescription, groupCode);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L73">        return &quot;LNAAUserRole{&quot; +</span>
+                &quot;roleName='&quot; + roleName + '\'' +
+                &quot;, roleCode='&quot; + roleCode + '\'' +
+                &quot;, roleDescription='&quot; + roleDescription + '\'' +
+                &quot;, groupCode='&quot; + groupCode + '\'' +
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

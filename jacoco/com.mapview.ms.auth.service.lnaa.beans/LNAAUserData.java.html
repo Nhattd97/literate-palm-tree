@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAAUserData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans</a> &gt; <span class="el_source">LNAAUserData.java</span></div><h1>LNAAUserData.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.springframework.util.CollectionUtils;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+<span class="fc" id="L14">public class LNAAUserData {</span>
+	
+    @JsonProperty(&quot;user_info&quot;)
+    private LNAAUserInfo userInfo;
+   
+    @JsonProperty(&quot;groups&quot;)
+    private List&lt;LNAAUserGroup&gt; groups;
+
+    @JsonProperty(&quot;roles&quot;)
+    private List&lt;LNAAUserRole&gt; roles;
+
+    @JsonProperty(&quot;user_nvps&quot;)
+    private List&lt;LNAAUserNVP&gt; userNvps;
+    
+    @JsonProperty(&quot;user_login_data&quot;)
+    private LNAAUserLoginData userLoginData;
+
+    public LNAAUserInfo getUserInfo() {
+<span class="fc" id="L32">        return userInfo;</span>
+    }
+
+    public void setUserInfo(LNAAUserInfo userInfo) {
+<span class="fc" id="L36">        this.userInfo = userInfo;</span>
+<span class="fc" id="L37">    }</span>
+
+    public List&lt;LNAAUserGroup&gt; getGroups() {
+<span class="fc" id="L40">        return groups;</span>
+    }
+
+    public void setGroups(List&lt;LNAAUserGroup&gt; groups) {
+<span class="fc" id="L44">        this.groups = groups;</span>
+<span class="fc" id="L45">    }</span>
+
+    public List&lt;LNAAUserRole&gt; getRoles() {
+<span class="fc" id="L48">        return roles;</span>
+    }
+
+    public void setRoles(List&lt;LNAAUserRole&gt; roles) {
+<span class="fc" id="L52">        this.roles = roles;</span>
+<span class="fc" id="L53">    }</span>
+
+    public List&lt;LNAAUserNVP&gt; getUserNvps() {
+<span class="fc" id="L56">		return userNvps;</span>
+	}
+
+	public void setUserNvps(List&lt;LNAAUserNVP&gt; userNvps) {
+<span class="fc" id="L60">		this.userNvps = userNvps;</span>
+<span class="fc" id="L61">	}</span>
+
+    public String getNVP(String name) {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (userNvps != null) {</span>
+<span class="fc" id="L65">            return userNvps.stream()</span>
+<span class="fc" id="L66">                .filter(n -&gt; n.getNvp_name().equals(name))</span>
+<span class="fc" id="L67">                .max(Comparator.comparing(LNAAUserNVP::getUser_nvp_id))</span>
+<span class="fc" id="L68">                .map(LNAAUserNVP::getNvp_value)</span>
+<span class="fc" id="L69">                .orElse(&quot;&quot;);</span>
+        }
+<span class="fc" id="L71">        return &quot;&quot;;</span>
+    }
+	
+	public int getNVPId(String name)	{
+		
+<span class="fc" id="L76">		int ret = -1;</span>
+		
+<span class="fc bfc" id="L78" title="All 2 branches covered.">		if (userNvps != null)	{</span>
+			
+<span class="fc" id="L80">			List&lt;LNAAUserNVP&gt; nvpList = userNvps.stream()</span>
+<span class="fc" id="L81">					.filter(n -&gt; n.getNvp_name().equals(name))</span>
+<span class="fc" id="L82">					.collect(Collectors.toList());</span>
+			
+			
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">			if ( ! CollectionUtils.isEmpty(nvpList))	{			</span>
+<span class="fc" id="L86">				ret = nvpList.get(0).getUser_nvp_id();</span>
+			}
+			
+		}
+		
+<span class="fc" id="L91">		return ret;</span>
+		
+	}
+
+	public LNAAUserLoginData getUserLoginData() {
+<span class="fc" id="L96">		return userLoginData;</span>
+	}
+
+	public void setUserLoginData(LNAAUserLoginData userLoginData) {
+<span class="fc" id="L100">		this.userLoginData = userLoginData;</span>
+<span class="fc" id="L101">	}</span>
+
+	@Override
+    public int hashCode() {
+<span class="fc" id="L105">        return Objects.hash(userInfo, groups, roles, userNvps, userLoginData);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L110" title="All 2 branches covered.">      if (this == o) {</span>
+<span class="fc" id="L111">        return true;</span>
+      }
+<span class="fc bfc" id="L113" title="All 4 branches covered.">      if (o == null || getClass() != o.getClass()) {</span>
+<span class="fc" id="L114">        return false;</span>
+      }
+<span class="fc" id="L116">      LNAAUserData comp = (LNAAUserData) o;</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">      return Objects.equals(this.userInfo, comp.userInfo)</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.groups, comp.groups)</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.roles, comp.roles)</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.userNvps, comp.userNvps)</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.userLoginData, comp.userLoginData);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L126">      StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L127">      sb.append(&quot;class LNAAUserData {\n&quot;);      </span>
+<span class="fc" id="L128">      sb.append(&quot;    userInfo: &quot;).append(toIndentedString(userInfo)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L129">      sb.append(&quot;    groups: &quot;).append(toIndentedString(groups)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L130">      sb.append(&quot;    roles: &quot;).append(toIndentedString(roles)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L131">      sb.append(&quot;    userNvps: &quot;).append(toIndentedString(userNvps)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L132">      sb.append(&quot;    userLoginData: &quot;).append(toIndentedString(userLoginData)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L133">      sb.append(&quot;}&quot;);</span>
+<span class="fc" id="L134">      return sb.toString();</span>
+    }
+
+    /**
+     * Convert the given object to string with each line indented by 4 spaces
+     * (except the first line).
+     */
+    private String toIndentedString(Object o) {
+<span class="fc bfc" id="L142" title="All 2 branches covered.">      if (o == null) {</span>
+<span class="fc" id="L143">        return &quot;null&quot;;</span>
+      }
+<span class="fc" id="L145">      return o.toString().replace(&quot;\n&quot;, &quot;\n    &quot;);</span>
+    }    
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

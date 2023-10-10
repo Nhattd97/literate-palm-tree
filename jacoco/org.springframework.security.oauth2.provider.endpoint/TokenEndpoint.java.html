@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TokenEndpoint.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">org.springframework.security.oauth2.provider.endpoint</a> &gt; <span class="el_source">TokenEndpoint.java</span></div><h1>TokenEndpoint.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2002-2011 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.security.oauth2.provider.endpoint;
+
+import com.google.common.base.Strings;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2RefreshToken;
+import org.springframework.security.oauth2.common.exceptions.BadClientCredentialsException;
+import org.springframework.security.oauth2.common.exceptions.InvalidClientException;
+import org.springframework.security.oauth2.common.exceptions.InvalidGrantException;
+import org.springframework.security.oauth2.common.exceptions.InvalidRequestException;
+import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
+import org.springframework.security.oauth2.common.exceptions.UnsupportedGrantTypeException;
+import org.springframework.security.oauth2.common.util.OAuth2Utils;
+import org.springframework.security.oauth2.provider.ClientDetails;
+import org.springframework.security.oauth2.provider.ClientRegistrationException;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.OAuth2RequestValidator;
+import org.springframework.security.oauth2.provider.TokenRequest;
+import org.springframework.security.oauth2.provider.request.DefaultOAuth2RequestValidator;
+import org.springframework.util.StringUtils;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import javax.servlet.ServletContext;
+import java.security.Principal;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+/**
+ * Changes for https://jira.rsi.lexisnexis.com/browse/MVG-5184
+ * &lt;p&gt;
+ * This class was copied from https://github.com/spring-attic/spring-security-oauth/tree/2.3.4.RELEASE and adjusted to set JWT access token as a httpOnly Cookie.
+ * &lt;p&gt;
+ * Behavior of TokenEndpoint in spring-security-oauth can't be adjusted for Cookie insertion and JWT token can't be set in filter,
+ * because handler, which is responsible for creating the token, commits the response hence preventing header to be inserted after handling.
+ * &lt;p&gt;
+ * Changes:
+ * - in postAccessToken() method, refresh_token in parameters (if present) takes precedence over the one from Cookies, when refreshing access token
+ * - in postAccessToken() method, check if logout was attempted, using  isLogoutRequest() method and return appropriate response via getLogoutResponse() with refresh_token=&quot;deleted&quot; and expiration set to Thu, 01 Jan 1970 00:00:00 GMT, to delete client cookie
+ * - in getResponse() method, refresh_token set as Cookie
+ *
+ *
+ * - jUnits class was copied and extended to satisfy coverage
+ * &lt;p&gt;
+ * Note: https://spring.io/projects/spring-security-oauth reach end of life hence solution based on this library should be replaced by https://spring.io/projects/spring-authorization-server or another IDP
+ */
+@FrameworkEndpoint
+<span class="fc" id="L79">public class TokenEndpoint extends AbstractEndpoint {</span>
+
+<span class="fc" id="L81">	private OAuth2RequestValidator oAuth2RequestValidator = new DefaultOAuth2RequestValidator();</span>
+
+<span class="fc" id="L83">	private Set&lt;HttpMethod&gt; allowedRequestMethods = new HashSet&lt;HttpMethod&gt;(Arrays.asList(HttpMethod.POST));</span>
+
+	@Autowired
+	private ServletContext context;
+
+	@RequestMapping(value = &quot;/oauth/token&quot;, method=RequestMethod.GET)
+	public ResponseEntity&lt;OAuth2AccessToken&gt; getAccessToken(Principal principal, @RequestParam
+	Map&lt;String, String&gt; parameters,@CookieValue(required = false) String refresh_token) throws HttpRequestMethodNotSupportedException {
+<span class="fc bfc" id="L91" title="All 2 branches covered.">		if (!allowedRequestMethods.contains(HttpMethod.GET)) {</span>
+<span class="fc" id="L92">			throw new HttpRequestMethodNotSupportedException(&quot;GET&quot;);</span>
+		}
+<span class="fc" id="L94">		return postAccessToken(principal, parameters, refresh_token);</span>
+	}
+	
+	@RequestMapping(value = &quot;/oauth/token&quot;, method=RequestMethod.POST)
+	public ResponseEntity&lt;OAuth2AccessToken&gt; postAccessToken(Principal principal, @RequestParam
+	Map&lt;String, String&gt; parameters, @CookieValue(required = false) String refresh_token) throws HttpRequestMethodNotSupportedException {
+
+<span class="fc bfc" id="L101" title="All 2 branches covered.">		if (!(principal instanceof Authentication)) {</span>
+<span class="fc" id="L102">			throw new InsufficientAuthenticationException(</span>
+					&quot;There is no client authentication. Try adding an appropriate authentication filter.&quot;);
+		}
+		
+<span class="fc" id="L106">		String clientId = getClientId(principal);</span>
+<span class="fc" id="L107">		ClientDetails authenticatedClient = getClientDetailsService().loadClientByClientId(clientId);</span>
+
+		// to invalidate token in a Cookie on a logout
+<span class="fc bfc" id="L110" title="All 2 branches covered.">		if (isLogoutRequest(parameters)) {</span>
+<span class="fc" id="L111">			return getLogoutResponse();</span>
+		}
+
+		// refresh_token in parameters (if present) takes precedence over the one from Cookies
+<span class="pc bpc" id="L115" title="1 of 4 branches missed.">		if(!parameters.containsKey(&quot;refresh_token&quot;) &amp;&amp; refresh_token!=null) {</span>
+<span class="fc" id="L116">			parameters.put(&quot;refresh_token&quot;, refresh_token);	</span>
+		}
+
+<span class="fc" id="L119">		TokenRequest tokenRequest = getOAuth2RequestFactory().createTokenRequest(parameters, authenticatedClient);</span>
+
+<span class="fc bfc" id="L121" title="All 2 branches covered.">		if (!Strings.isNullOrEmpty(clientId)) {</span>
+			// Only validate the client details if a client authenticated during this
+			// request.
+<span class="fc bfc" id="L124" title="All 2 branches covered.">			if (!clientId.equals(tokenRequest.getClientId())) {</span>
+				// double check to make sure that the client ID in the token request is the same as that in the
+				// authenticated client
+<span class="fc" id="L127">				throw new InvalidClientException(&quot;Given client ID does not match authenticated client&quot;);</span>
+			}
+		}
+<span class="fc bfc" id="L130" title="All 2 branches covered.">		if (authenticatedClient != null) {</span>
+<span class="fc" id="L131">			oAuth2RequestValidator.validateScope(tokenRequest, authenticatedClient);</span>
+		}
+<span class="fc bfc" id="L133" title="All 2 branches covered.">		if (!StringUtils.hasText(tokenRequest.getGrantType())) {</span>
+<span class="fc" id="L134">			throw new InvalidRequestException(&quot;Missing grant type&quot;);</span>
+		}
+<span class="fc bfc" id="L136" title="All 2 branches covered.">		if (tokenRequest.getGrantType().equals(&quot;implicit&quot;)) {</span>
+<span class="fc" id="L137">			throw new InvalidGrantException(&quot;Implicit grant type not supported from token endpoint&quot;);</span>
+		}
+
+<span class="fc bfc" id="L140" title="All 2 branches covered.">		if (isAuthCodeRequest(parameters)) {</span>
+			// The scope was requested or determined during the authorization step
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">			if (!tokenRequest.getScope().isEmpty()) {</span>
+<span class="fc" id="L143">				logger.debug(&quot;Clearing scope of incoming token request&quot;);</span>
+<span class="fc" id="L144">				tokenRequest.setScope(Collections.&lt;String&gt; emptySet());</span>
+			}
+		}
+
+<span class="fc bfc" id="L148" title="All 2 branches covered.">		if (isRefreshTokenRequest(parameters)) {</span>
+			// A refresh token has its own default scopes, so we should ignore any added by the factory here.
+<span class="fc" id="L150">			tokenRequest.setScope(OAuth2Utils.parseParameterList(parameters.get(OAuth2Utils.SCOPE)));</span>
+		}
+
+<span class="fc" id="L153">		OAuth2AccessToken token = getTokenGranter().grant(tokenRequest.getGrantType(), tokenRequest);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">		if (token == null) {</span>
+<span class="fc" id="L155">			throw new UnsupportedGrantTypeException(&quot;Unsupported grant type: &quot; + tokenRequest.getGrantType());</span>
+		}
+		
+<span class="fc" id="L158">		return getResponse(token);</span>
+
+	}
+
+	/**
+	 * @param principal the currently authentication principal
+	 * @return a client id if there is one in the principal
+	 */
+	protected String getClientId(Principal principal) {
+<span class="fc" id="L167">		Authentication client = (Authentication) principal;</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">		if (!client.isAuthenticated()) {</span>
+<span class="fc" id="L169">			throw new InsufficientAuthenticationException(&quot;The client is not authenticated.&quot;);</span>
+		}
+<span class="fc" id="L171">		String clientId = client.getName();</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">		if (client instanceof OAuth2Authentication) {</span>
+			// Might be a client and user combined authentication
+<span class="fc" id="L174">			clientId = ((OAuth2Authentication) client).getOAuth2Request().getClientId();</span>
+		}
+<span class="fc" id="L176">		return clientId;</span>
+	}
+
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	public ResponseEntity&lt;OAuth2Exception&gt; handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) throws Exception {
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">		if (logger.isInfoEnabled()) {</span>
+<span class="fc" id="L182">			logger.info(&quot;Handling error: &quot; + e.getClass().getSimpleName() + &quot;, &quot; + e.getMessage());</span>
+		}
+<span class="fc" id="L184">	    return getExceptionTranslator().translate(e);</span>
+	}
+	
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity&lt;OAuth2Exception&gt; handleException(Exception e) throws Exception {
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">		if (logger.isWarnEnabled()) {</span>
+<span class="fc" id="L190">			logger.warn(&quot;Handling error: &quot; + e.getClass().getSimpleName() + &quot;, &quot; + e.getMessage());</span>
+		}
+<span class="fc" id="L192">		return getExceptionTranslator().translate(e);</span>
+	}
+	
+	@ExceptionHandler(ClientRegistrationException.class)
+	public ResponseEntity&lt;OAuth2Exception&gt; handleClientRegistrationException(Exception e) throws Exception {
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">		if (logger.isWarnEnabled()) {</span>
+<span class="fc" id="L198">			logger.warn(&quot;Handling error: &quot; + e.getClass().getSimpleName() + &quot;, &quot; + e.getMessage());</span>
+		}
+<span class="fc" id="L200">		return getExceptionTranslator().translate(new BadClientCredentialsException());</span>
+	}
+
+	@ExceptionHandler(OAuth2Exception.class)
+	public ResponseEntity&lt;OAuth2Exception&gt; handleException(OAuth2Exception e) throws Exception {
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">		if (logger.isWarnEnabled()) {</span>
+<span class="fc" id="L206">			logger.warn(&quot;Handling error: &quot; + e.getClass().getSimpleName() + &quot;, &quot; + e.getMessage());</span>
+		}
+<span class="fc" id="L208">		return getExceptionTranslator().translate(e);</span>
+	}
+
+	private ResponseEntity&lt;OAuth2AccessToken&gt; getResponse(OAuth2AccessToken accessToken) {
+<span class="fc" id="L212">		HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L213">		headers.set(&quot;Cache-Control&quot;, &quot;no-store&quot;);</span>
+<span class="fc" id="L214">		headers.set(&quot;Pragma&quot;, &quot;no-cache&quot;);</span>
+<span class="fc" id="L215">		headers.set(&quot;Content-Type&quot;, &quot;application/json;charset=UTF-8&quot;);</span>
+<span class="fc" id="L216">		Optional.ofNullable(accessToken).ifPresent(</span>
+<span class="fc" id="L217">				token -&gt; Optional.ofNullable(token.getRefreshToken()).ifPresent(refresh_token -&gt; headers.set(&quot;Set-Cookie&quot;,</span>
+<span class="fc" id="L218">						refreshTokenCookie(refresh_token.toString(),context.getContextPath()))));</span>
+<span class="fc" id="L219">		return new ResponseEntity&lt;OAuth2AccessToken&gt;(accessToken, headers, HttpStatus.OK);</span>
+	}
+	private ResponseEntity&lt;OAuth2AccessToken&gt; getLogoutResponse(){
+<span class="fc" id="L222">		HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L223">		headers.set(&quot;Cache-Control&quot;, &quot;no-store&quot;);</span>
+<span class="fc" id="L224">		headers.set(&quot;Pragma&quot;, &quot;no-cache&quot;);</span>
+<span class="fc" id="L225">		headers.set(&quot;Content-Type&quot;, &quot;application/json;charset=UTF-8&quot;);</span>
+<span class="fc" id="L226">		headers.set(&quot;Set-Cookie&quot;, refreshTokenCookie(&quot;deleted; expires=Thu, 01 Jan 1970 00:00:00 GMT&quot;,context.getContextPath()));</span>
+
+<span class="fc" id="L228">		return new ResponseEntity&lt;OAuth2AccessToken&gt;(new DefaultOAuth2AccessToken(&quot;deleted&quot;), headers, HttpStatus.OK);</span>
+	}
+
+	public static String refreshTokenCookie(String refresh_token, String path){
+<span class="fc" id="L232">		return String.format(&quot;refresh_token=%s; Secure; HttpOnly; SameSite=Strict; Path=&quot;+path, refresh_token);</span>
+	}
+
+	private boolean isRefreshTokenRequest(Map&lt;String, String&gt; parameters) {
+<span class="pc bpc" id="L236" title="1 of 4 branches missed.">		return &quot;refresh_token&quot;.equals(parameters.get(&quot;grant_type&quot;)) &amp;&amp; parameters.get(&quot;refresh_token&quot;) != null;</span>
+	}
+
+	private boolean isAuthCodeRequest(Map&lt;String, String&gt; parameters) {
+<span class="fc bfc" id="L240" title="All 4 branches covered.">		return &quot;authorization_code&quot;.equals(parameters.get(&quot;grant_type&quot;)) &amp;&amp; parameters.get(&quot;code&quot;) != null;</span>
+	}
+
+	private boolean isLogoutRequest(Map&lt;String, String&gt; parameters) {
+<span class="fc" id="L244">		return &quot;logout&quot;.equals(parameters.get(&quot;grant_type&quot;));</span>
+
+	}
+
+	public void setOAuth2RequestValidator(OAuth2RequestValidator oAuth2RequestValidator) {
+<span class="fc" id="L249">		this.oAuth2RequestValidator = oAuth2RequestValidator;</span>
+<span class="fc" id="L250">	}</span>
+
+	public void setAllowedRequestMethods(Set&lt;HttpMethod&gt; allowedRequestMethods) {
+<span class="fc" id="L253">		this.allowedRequestMethods = allowedRequestMethods;</span>
+<span class="fc" id="L254">	}</span>
+
+	public void setContext(ServletContext context) {
+<span class="fc" id="L257">		this.context=context;</span>
+<span class="fc" id="L258">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GetUserResponseBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.response</a> &gt; <span class="el_source">GetUserResponseBuilder.java</span></div><h1>GetUserResponseBuilder.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.response;
+
+import com.mapview.ms.auth.entity.MapviewUser;
+import com.mapview.ms.auth.entity.SSOUser;
+import com.mapview.ms.auth.entity.UserAccountDetails;
+import com.mapview.ms.auth.entity.UserAccountDetailsBuilder;
+import com.mapview.ms.auth.entity.UserDetails;
+import com.mapview.ms.auth.entity.UserDetailsBuilder;
+import com.mapview.ms.auth.entity.UserRequestResponse;
+import com.mapview.ms.auth.entity.UserRequestResponseBuilder;
+import com.mapview.ms.auth.request.RequestAccountDetails;
+import com.mapview.ms.auth.request.RequestAccountDetailsBuilder;
+
+public class GetUserResponseBuilder {
+
+    private GetUserResponse userResponse;
+
+<span class="fc" id="L18">    public GetUserResponseBuilder() {</span>
+<span class="fc" id="L19">        userResponse = new GetUserResponse();</span>
+<span class="fc" id="L20">    }</span>
+
+    public GetUserResponseBuilder withUser(MapviewUser user) {
+<span class="fc" id="L23">        RequestAccountDetails requestAccountDetails = new RequestAccountDetailsBuilder()</span>
+<span class="fc" id="L24">            .withCustomerNumber(user.getCustomerNumber())</span>
+<span class="fc" id="L25">            .withAccountNumber(user.getAccountNumber())</span>
+<span class="fc" id="L26">            .build();</span>
+        
+<span class="fc" id="L28">        UserRequestResponse userRequestResponse = new UserRequestResponseBuilder()</span>
+<span class="fc" id="L29">            .withUsername(user.getUsername())</span>
+<span class="fc" id="L30">            .withBundles(user.getBundles())</span>
+<span class="fc" id="L31">            .withEmail(user.getEmail())</span>
+<span class="fc" id="L32">            .withFirstName(user.getFirstname())</span>
+<span class="fc" id="L33">            .withLastName(user.getLastname())</span>
+<span class="fc" id="L34">            .withLanguage(user.getLanguage())</span>
+<span class="fc" id="L35">            .withAccountDetails(requestAccountDetails)</span>
+<span class="fc" id="L36">            .build();</span>
+
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (user instanceof SSOUser) {</span>
+<span class="fc" id="L39">            userRequestResponse.setSsoId(((SSOUser) user).getSsoId());</span>
+        }
+
+<span class="fc" id="L42">        UserAccountDetails userAccountDetails = new UserAccountDetailsBuilder()</span>
+<span class="fc" id="L43">            .withResetPasswordRequired(user.getResetRequired())</span>
+<span class="fc" id="L44">            .withWrongPasswordLoginAttempts(user.getWrongLoginAttempts())</span>
+<span class="fc" id="L45">            .withPasswordExpireDate(user.getExpireDate())</span>
+<span class="fc" id="L46">            .build();</span>
+
+<span class="fc" id="L48">        UserDetails userDetails = new UserDetailsBuilder()</span>
+<span class="fc" id="L49">            .withUser(userRequestResponse)</span>
+<span class="fc" id="L50">            .withAccountDetails(userAccountDetails)</span>
+<span class="fc" id="L51">            .build();</span>
+        
+<span class="fc" id="L53">        userResponse.setUserDetails(userDetails);</span>
+        
+<span class="fc" id="L55">        return this;</span>
+    }
+
+    public GetUserResponseBuilder withUserDetails(UserDetails userDetails) {
+<span class="fc" id="L59">        userResponse.setUserDetails(userDetails);</span>
+<span class="fc" id="L60">        return this;</span>
+    }
+
+    public GetUserResponse build() {
+<span class="fc" id="L64">        return userResponse;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

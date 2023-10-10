@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValidationUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.annotations</a> &gt; <span class="el_source">ValidationUtils.java</span></div><h1>ValidationUtils.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.annotations;
+
+import com.mapview.ms.auth.utils.LNAAUtils;
+import com.mapview.ms.auth.utils.XSSUtils;
+import lombok.extern.slf4j.Slf4j;
+import net.logstash.logback.encoder.org.apache.commons.lang3.StringUtils;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+<span class="fc" id="L14">@Slf4j</span>
+<span class="nc" id="L15">public class ValidationUtils {</span>
+    public static Object getFieldValue(Object value, String name) {
+        try {
+<span class="fc" id="L18">            Field field = value.getClass().getDeclaredField(name);</span>
+<span class="fc" id="L19">            field.setAccessible(true);</span>
+
+<span class="fc" id="L21">            return field.get(value);</span>
+<span class="fc" id="L22">        } catch (Exception ex) {</span>
+            // don't report errors here, must validate null and throw respective errors
+<span class="fc" id="L24">            log.error(ex.getMessage(), ex);</span>
+<span class="fc" id="L25">            return null;</span>
+        }
+    }
+
+    public static boolean isValidLnaaUsername(Object value) {
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        Iterable&lt;?&gt; values = value instanceof String</span>
+<span class="fc" id="L31">                ? List.of(value)</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">                : (value instanceof String[]</span>
+<span class="fc" id="L33">                    ? Arrays.asList((String[])value)</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                    : (value instanceof  Collection ? (Collection)value : Collections.emptyList())</span>
+                );
+
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        for (Object val : values) {</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">            if (val instanceof String) {</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">                if (!validateString((String)val)) {</span>
+<span class="fc" id="L40">                    return false;</span>
+                }
+            }
+<span class="fc" id="L43">        }</span>
+
+<span class="fc" id="L45">        return true;</span>
+    }
+
+    private static boolean validateString(String val) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if(StringUtils.isEmpty(val)) {</span>
+<span class="fc" id="L50">            return true;</span>
+        }
+
+<span class="fc bfc" id="L53" title="All 4 branches covered.">        return LNAAUtils.validate(val) &amp;&amp; !XSSUtils.hasHTMLTags(val);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

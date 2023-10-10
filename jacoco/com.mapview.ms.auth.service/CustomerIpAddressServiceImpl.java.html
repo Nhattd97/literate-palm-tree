@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomerIpAddressServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service</a> &gt; <span class="el_source">CustomerIpAddressServiceImpl.java</span></div><h1>CustomerIpAddressServiceImpl.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.mapview.ms.auth.beans.UserDto;
+import org.apache.commons.net.util.SubnetUtils;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+import com.mapview.ms.auth.entity.CustomerIpAddress;
+import com.mapview.ms.auth.entity.RecordStatus;
+import com.mapview.ms.auth.exceptions.ErrorCode;
+import com.mapview.ms.auth.exceptions.MapviewGlobalException;
+import com.mapview.ms.auth.repository.CustomerIpAddressRepository;
+import com.mapview.ms.auth.request.SubnetConfig;
+import com.mapview.ms.auth.request.UpdateCustomerIpRequest;
+import com.mapview.ms.auth.response.CustomerIpAddressResponse;
+import com.mapview.ms.auth.response.GetUserResponse;
+
+@Service
+<span class="fc" id="L26">public class CustomerIpAddressServiceImpl implements CustomerIpAddressService {</span>
+
+	@Autowired
+	CustomerIpAddressRepository customerIpAddressRepository;
+
+	@Autowired
+	@Qualifier(&quot;userAdapterService&quot;)
+	UserService userService;
+
+	@Override
+	public List&lt;CustomerIpAddressResponse&gt; getCustomerIpAddress(String accountNumber) {
+<span class="fc" id="L37">		return customerIpAddressRepository.findAllByAccountNumberAndStatus(accountNumber, RecordStatus.ENABLED).stream()</span>
+<span class="fc" id="L38">		        .map(address -&gt; {</span>
+<span class="fc" id="L39">			        CustomerIpAddressResponse response = new CustomerIpAddressResponse();</span>
+<span class="fc" id="L40">			        BeanUtils.copyProperties(address, response);</span>
+<span class="fc" id="L41">			        return response;</span>
+<span class="fc" id="L42">		        }).collect(Collectors.toList());</span>
+	}
+
+	@Override
+	public boolean updateCustomerIpAddresses(String updateBy, UpdateCustomerIpRequest request) {
+<span class="fc" id="L47">		validateUpdateCustomerIpRequest(request);</span>
+		
+<span class="fc" id="L49">		String accountNumber = request.getAccountNumber();</span>
+<span class="fc" id="L50">		delete(accountNumber);</span>
+<span class="fc" id="L51">		request.getSubnets().stream().forEach(config -&gt; {</span>
+<span class="fc" id="L52">			CustomerIpAddress address = new CustomerIpAddress();</span>
+<span class="fc" id="L53">			address.setAccountNumber(accountNumber);</span>
+<span class="fc" id="L54">			address.setSubnet(config.getSubnet());			</span>
+<span class="fc" id="L55">			address.setUpdatedBy(updateBy);</span>
+<span class="fc" id="L56">			address.setDescription(config.getDescription());</span>
+<span class="fc" id="L57">			address.setStatus(RecordStatus.ENABLED);</span>
+<span class="fc" id="L58">			address.setUpdatedDate(Instant.now());</span>
+<span class="fc" id="L59">			customerIpAddressRepository.save(address);</span>
+<span class="fc" id="L60">		});</span>
+<span class="fc" id="L61">		return true;</span>
+	}
+
+	
+	@Override
+	public boolean delete(String accountNumber) {
+<span class="fc" id="L67">		List&lt;CustomerIpAddress&gt; currConfigList = customerIpAddressRepository.findAllByAccountNumberAndStatus(accountNumber,</span>
+		        RecordStatus.ENABLED);
+<span class="fc" id="L69">		currConfigList.stream().forEach(config -&gt; {</span>
+<span class="fc" id="L70">			config.setStatus(RecordStatus.DISABLED);</span>
+<span class="fc" id="L71">			customerIpAddressRepository.save(config);</span>
+<span class="fc" id="L72">		});</span>
+<span class="fc" id="L73">		return true;</span>
+	}
+
+	@Override
+	public List&lt;CustomerIpAddress&gt; getCustomerIpAddressByUsername(String username) {
+<span class="fc" id="L78">		List&lt;CustomerIpAddress&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L79">		UserDto user = new UserDto();</span>
+<span class="fc" id="L80">		user.setUsername(username);</span>
+<span class="fc" id="L81">		GetUserResponse response = userService.fetchByUsername(user);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">		if (response.getError() != null)</span>
+<span class="fc" id="L83">			return result;</span>
+<span class="fc" id="L84">		String accountNumber = response.getUserDetails().getUser().getAccountDetails().getRequestAccount();</span>
+<span class="fc" id="L85">		return customerIpAddressRepository.findAllByAccountNumberAndStatus(accountNumber,</span>
+		        RecordStatus.ENABLED);
+	}
+
+	private void validateUpdateCustomerIpRequest(UpdateCustomerIpRequest request) {
+
+<span class="fc" id="L91">		List&lt;SubnetConfig&gt; list = request.getSubnets().stream().parallel()</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">		        .filter(address -&gt; !validateCustomerIpConfig(address)).collect(Collectors.toList());</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">		if (!list.isEmpty())</span>
+<span class="fc" id="L94">			throw new MapviewGlobalException(ErrorCode.IP_VALIDATION_ERROR, ErrorCode.IP_VALIDATION_ERROR.getCompareString());</span>
+<span class="fc" id="L95">	}</span>
+
+	private  boolean validateCustomerIpConfig(SubnetConfig config) {
+		try {			
+<span class="fc" id="L99">			new SubnetUtils(config.getSubnet());			</span>
+<span class="fc" id="L100">			return true;</span>
+<span class="fc" id="L101">		}catch(Exception ex) {</span>
+<span class="fc" id="L102">			return false;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAAUserSearchRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans.search</a> &gt; <span class="el_source">LNAAUserSearchRequest.java</span></div><h1>LNAAUserSearchRequest.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans.search;
+
+import static com.mapview.ms.auth.service.lnaa.LNAASearchField.FILTER_TYPE_CONTAINS;
+import static com.mapview.ms.auth.service.lnaa.LNAASearchField.FILTER_TYPE_STARTSWITH;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.mapview.ms.auth.beans.NVPName;
+import org.apache.commons.beanutils.BeanUtils;
+import org.springframework.util.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mapview.ms.auth.request.search.UserSearchCriteria;
+import com.mapview.ms.auth.request.search.UserSearchField;
+import com.mapview.ms.auth.service.lnaa.LNAAException;
+import com.mapview.ms.auth.service.lnaa.LNAASettings;
+import com.mapview.ms.auth.service.lnaa.beans.LNAARequestSession;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAServiceRequest;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAUserNVP;
+import com.mapview.ms.auth.utils.LNAAUtils;
+
+<span class="fc" id="L26">public class LNAAUserSearchRequest extends LNAAServiceRequest&lt;UserSearchCriteria&gt; {</span>
+
+	public static final String SEARCH_FIELD_BUNDLE = &quot;bundle&quot;;
+	
+    private LNAAUserSearchData data;
+    private LNAARequestSession session;
+
+    @JsonProperty(&quot;return_data&quot;)
+    private LNAASearchReturnDataFlags returnData;
+    
+<span class="fc" id="L36">    private String [][] mappingFieldsArr = {{&quot;username&quot;, &quot;login_id&quot;},{&quot;email&quot;, &quot;email_address&quot;},{&quot;firstname&quot;,&quot;first_name&quot;}, {&quot;lastname&quot;,&quot;last_name&quot;}};</span>
+<span class="fc" id="L37">    private Map&lt;String, String&gt; mappingFields = new HashMap();</span>
+    
+<span class="fc" id="L39">    private List&lt;String&gt; arrayFields = Arrays.asList(new String[]{&quot;status&quot;, &quot;account_ids&quot;});</span>
+	
+	@Override
+	public LNAAServiceRequest init(LNAASettings lnaaSettings, UserSearchCriteria request, LNAARequestSession session) {
+
+<span class="fc bfc" id="L44" title="All 2 branches covered.">		for (String[] pair : mappingFieldsArr) {</span>
+<span class="fc" id="L45">			mappingFields.put(pair[0], pair[1]);</span>
+		}
+		
+<span class="fc" id="L48">		LNAAUserSearchData searchData = new LNAAUserSearchData();</span>
+		
+		try {
+			
+<span class="fc" id="L52">			List&lt;LNAAUserNVP&gt; nvps = new ArrayList();</span>
+<span class="fc" id="L53">			searchData.setNvps(nvps);</span>
+			
+<span class="fc" id="L55">			searchData.setDomain(lnaaSettings.getUser_domain());</span>
+
+<span class="fc bfc" id="L57" title="All 2 branches covered.">			for (UserSearchField field : request.getSearchFields())	{</span>
+<span class="fc" id="L58">				setSearchField(searchData, field);</span>
+<span class="fc" id="L59">			}</span>
+			
+<span class="fc" id="L61">			LNAAUserSearchDataPaging paging = new LNAAUserSearchDataPaging();</span>
+<span class="fc" id="L62">			paging.setMax_results(lnaaSettings.getPage_size());</span>
+			
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">			if ( ! StringUtils.isEmpty(request.getSortField())) {</span>
+<span class="fc" id="L65">				String sortField = mappingFields.get(request.getSortField());</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">				sortField = (sortField == null) ? request.getSortField() : sortField;</span>
+<span class="fc" id="L67">				paging.setSortField(sortField);</span>
+<span class="fc" id="L68">				paging.setSortOrder(request.getSortOrder());</span>
+<span class="fc" id="L69">				paging.setBoolType(&quot;AND&quot;);</span>
+			}
+
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">			if ( ! StringUtils.isEmpty(request.getPageNumber()))	{</span>
+<span class="fc" id="L73">				int start = Integer.parseInt(request.getPageNumber());</span>
+<span class="fc" id="L74">				start *= Integer.parseInt(lnaaSettings.getPage_size());</span>
+<span class="fc" id="L75">				paging.setStartAt(String.valueOf(start));</span>
+<span class="fc" id="L76">			} else {</span>
+<span class="nc" id="L77">				paging.setStartAt(&quot;0&quot;);</span>
+			}
+			
+<span class="fc" id="L80">			LNAAUserNVP custAccNVP = new LNAAUserNVP();</span>
+<span class="fc" id="L81">			custAccNVP.setNvp_name(NVPName.CUSTOMER_ACCOUNT_NUMBER.name());</span>
+<span class="nc" id="L82">			custAccNVP.setNvp_value(request.getAccountDetails().getRequestCust() + &quot;#&quot; + request.getAccountDetails().getRequestAccount());			</span>
+<span class="nc" id="L83">			nvps.add(custAccNVP);</span>
+<span class="nc" id="L84">			searchData.setNvps(nvps);</span>
+			
+<span class="nc" id="L86">			returnData = new LNAASearchReturnDataFlags();</span>
+<span class="nc" id="L87">			returnData.setNvps(&quot;1&quot;);</span>
+<span class="nc" id="L88">			returnData.setLoginData(&quot;1&quot;);</span>
+			
+<span class="nc" id="L90">			searchData.setPaging(paging);</span>
+<span class="nc" id="L91">			setData(searchData);</span>
+<span class="nc" id="L92">			setSession(session);</span>
+			
+<span class="fc" id="L94">		} catch (Exception e) {</span>
+<span class="fc" id="L95">			e.printStackTrace();</span>
+<span class="nc" id="L96">		}</span>
+
+<span class="fc" id="L98">		return this;</span>
+
+	}
+	
+	private void setSearchField(LNAAUserSearchData searchData, UserSearchField field) throws Exception	{
+		
+<span class="fc bfc" id="L104" title="All 2 branches covered.">		if (field.getFieldName().equals(SEARCH_FIELD_BUNDLE))	{</span>
+			
+<span class="fc" id="L106">			LNAAUserNVP custAccNVP = new LNAAUserNVP();</span>
+<span class="fc" id="L107">			custAccNVP.setNvp_name(NVPName.BUNDLES.name());</span>
+<span class="fc" id="L108">			custAccNVP.setNvp_value(field.getValue());			</span>
+<span class="fc" id="L109">			searchData.getNvps().add(custAccNVP);</span>
+			
+<span class="fc bfc" id="L111" title="All 2 branches covered.">		} else if (arrayFields.contains(field.getFieldName()))	{</span>
+			
+<span class="fc" id="L113">			List&lt;String&gt; value = Arrays.asList(field.getValue().split(&quot;,&quot;));</span>
+<span class="fc" id="L114">			BeanUtils.setProperty(searchData, field.getFieldName(), value);</span>
+			
+<span class="fc" id="L116">		} else {</span>
+					
+<span class="fc" id="L118">			String value = &quot;&quot;;</span>
+<span class="fc" id="L119">			String type = field.getFilterType();</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">			type = type == null ? &quot;&quot; : type;</span>
+			
+<span class="fc bfc" id="L122" title="All 2 branches covered.">			if (type.equals(FILTER_TYPE_CONTAINS))	{</span>
+<span class="fc" id="L123">				value = &quot;%&quot;;</span>
+			}
+<span class="fc" id="L125">			value += field.getValue();</span>
+<span class="fc bfc" id="L126" title="All 4 branches covered.">			if (type.equals(FILTER_TYPE_STARTSWITH) || type.equals(FILTER_TYPE_CONTAINS))	{</span>
+<span class="fc" id="L127">				value += &quot;%&quot;;</span>
+			}
+		
+<span class="fc" id="L130">			BeanUtils.setProperty(searchData, field.getFieldName(), value);</span>
+<span class="fc" id="L131">			searchData.setUsername(LNAAUtils.encodeSearchUsername(searchData.getUsername()));</span>
+
+		}
+
+<span class="fc" id="L135">	}</span>
+	
+	@Override
+	public void validateRequest(UserSearchCriteria request) throws LNAAException {
+		
+<span class="fc" id="L140">	}</span>
+	
+	public LNAAUserSearchData getData() {
+<span class="fc" id="L143">		return data;</span>
+	}
+
+	public void setData(LNAAUserSearchData data) {
+<span class="fc" id="L147">		this.data = data;</span>
+<span class="fc" id="L148">	}</span>
+
+	public LNAARequestSession getSession() {
+<span class="fc" id="L151">		return session;</span>
+	}
+
+	public void setSession(LNAARequestSession session) {
+<span class="fc" id="L155">		this.session = session;</span>
+<span class="fc" id="L156">	}</span>
+
+	public LNAASearchReturnDataFlags getReturnData() {
+<span class="fc" id="L159">		return returnData;</span>
+	}
+
+	public void setReturnData(LNAASearchReturnDataFlags returnData) {
+<span class="fc" id="L163">		this.returnData = returnData;</span>
+<span class="fc" id="L164">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

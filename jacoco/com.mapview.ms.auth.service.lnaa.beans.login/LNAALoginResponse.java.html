@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAALoginResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans.login</a> &gt; <span class="el_source">LNAALoginResponse.java</span></div><h1>LNAALoginResponse.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans.login;
+
+import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAServiceResponse;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAUserData;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAUserLoginData;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+<span class="fc" id="L12">public class LNAALoginResponse extends LNAAServiceResponse {</span>
+    
+	@JsonProperty(&quot;user_data&quot;)
+    private LNAAUserData userData;
+    
+    @JsonProperty(&quot;user_login_data&quot;)
+    private LNAAUserLoginData userLoginData;
+    
+    public LNAAUserData getUserData() {
+<span class="fc" id="L21">        return userData;</span>
+    }
+
+    public void setUserData(LNAAUserData userData) {
+<span class="fc" id="L25">        this.userData = userData;</span>
+<span class="fc" id="L26">    }</span>
+    
+    
+
+    public LNAAUserLoginData getUserLoginData() {
+<span class="fc" id="L31">		return userLoginData;</span>
+	}
+
+	public void setUserLoginData(LNAAUserLoginData userLoginData) {
+<span class="fc" id="L35">		this.userLoginData = userLoginData;</span>
+<span class="fc" id="L36">	}</span>
+
+	@Override
+    public int hashCode() {
+<span class="fc" id="L40">        return Objects.hash(userData, userLoginData, super.hashCode());</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L45" title="All 2 branches covered.">      if (this == o) {</span>
+<span class="fc" id="L46">        return true;</span>
+      }
+<span class="fc bfc" id="L48" title="All 4 branches covered.">      if (o == null || getClass() != o.getClass()) {</span>
+<span class="fc" id="L49">        return false;</span>
+      }
+<span class="fc" id="L51">      LNAALoginResponse comp = (LNAALoginResponse) o;</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">      return Objects.equals(this.userData, comp.userData)</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">    		  &amp;&amp;  Objects.equals(this.userLoginData, comp.userLoginData)</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">              &amp;&amp; super.equals(comp);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L59">      StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L60">      sb.append(&quot;class LNAALoginResponse {\n&quot;);      </span>
+<span class="fc" id="L61">      sb.append(&quot;    &quot;).append(toIndentedString(super.toString())).append(&quot;\n&quot;);</span>
+<span class="fc" id="L62">      sb.append(&quot;    userData: &quot;).append(toIndentedString(userData)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L63">      sb.append(&quot;    userLoginData: &quot;).append(toIndentedString(userLoginData)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L64">      sb.append(&quot;}&quot;);</span>
+<span class="fc" id="L65">      return sb.toString();</span>
+    }
+
+    /**
+     * Convert the given object to string with each line indented by 4 spaces
+     * (except the first line).
+     */
+    private String toIndentedString(Object o) {
+<span class="fc bfc" id="L73" title="All 2 branches covered.">      if (o == null) {</span>
+<span class="fc" id="L74">        return &quot;null&quot;;</span>
+      }
+<span class="fc" id="L76">      return o.toString().replace(&quot;\n&quot;, &quot;\n    &quot;);</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

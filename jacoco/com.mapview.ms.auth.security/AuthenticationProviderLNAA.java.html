@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthenticationProviderLNAA.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.security</a> &gt; <span class="el_source">AuthenticationProviderLNAA.java</span></div><h1>AuthenticationProviderLNAA.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.security;
+
+import com.mapview.ms.auth.beans.NVPName;
+import com.mapview.ms.auth.beans.UserDto;
+import com.mapview.ms.auth.entity.UserAccountDetails;
+import com.mapview.ms.auth.entity.UserAccountDetailsBuilder;
+import com.mapview.ms.auth.entity.UserDetails;
+import com.mapview.ms.auth.exceptions.AuthenticationStatus;
+import com.mapview.ms.auth.exceptions.LNAAAuthenticationException;
+import com.mapview.ms.auth.response.GetUserResponse;
+import com.mapview.ms.auth.response.GetUserResponseBuilder;
+import com.mapview.ms.auth.service.AuthenticationLoggingService;
+import com.mapview.ms.auth.service.UserServiceType;
+import com.mapview.ms.auth.service.lnaa.LNAARestClient;
+import com.mapview.ms.auth.service.lnaa.UserServiceLNAA;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAUserData;
+import com.mapview.ms.auth.service.lnaa.beans.login.LNAALoginResponse;
+import com.mapview.ms.auth.utils.LNAAUtils;
+import com.mapview.ms.logging.entity.TransactionAction;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
+import java.util.Collections;
+import java.util.Objects;
+
+@Service
+<span class="fc" id="L33">public class AuthenticationProviderLNAA implements AuthenticationProvider {</span>
+    @Autowired
+    private UserServiceLNAA userService;
+
+    @Value(&quot;${mvg.user-service-type}&quot;)
+    private String userServiceType;
+
+    @Autowired
+    private AuthenticationLoggingService authenticationLoggingService;
+
+    @Override
+    public Authentication authenticate(Authentication authentication) {
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (authentication == null) {</span>
+<span class="fc" id="L46">            throw new LNAAAuthenticationException(AuthenticationStatus.UNEXPECTED_ERROR, &quot;&quot;);</span>
+        }
+<span class="fc" id="L48">        String username = String.valueOf(authentication.getPrincipal());</span>
+<span class="fc" id="L49">        LNAALoginResponse resp = login(authentication);</span>
+<span class="fc" id="L50">        UserDetails userDetails = handleLoginResponse(resp, username);</span>
+<span class="fc" id="L51">        authenticationLoggingService.sendTransactionToQueue(userDetails, TransactionAction.VALID_AUTHENTICATION);</span>
+<span class="fc" id="L52">        return getAuthentication(authentication, userDetails);</span>
+    }
+
+    @Override
+    public boolean supports(Class&lt;?&gt; authentication) {
+<span class="pc bpc" id="L57" title="1 of 4 branches missed.">        return UserServiceType.LNAA.name().equalsIgnoreCase(userServiceType) &amp;&amp; UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);</span>
+    }
+
+    private LNAALoginResponse login(Authentication authentication) {
+        try {
+<span class="fc" id="L62">            String username = LNAAUtils.encodeUsername(String.valueOf(authentication.getPrincipal()));</span>
+<span class="fc" id="L63">            LNAARestClient restClient = userService.getLnaaSession().getLnaaRestClient();</span>
+<span class="fc" id="L64">            return restClient.authenticateUser(username, authentication.getCredentials().toString());</span>
+<span class="fc" id="L65">        } catch (Exception e) {</span>
+<span class="fc" id="L66">            throw new LNAAAuthenticationException(AuthenticationStatus.UNEXPECTED_ERROR, e.toString());</span>
+        }
+    }
+
+    private UserDetails handleLoginResponse(LNAALoginResponse resp, String username) {
+<span class="fc" id="L71">        int statusCode = resp.getStatus().getCode();</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if(AuthenticationStatus.PASSWORD_RESET_REQUIRED.getCode() == statusCode) {</span>
+<span class="fc" id="L73">            return handlePasswordResetRequire(username);</span>
+        }
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if(AuthenticationStatus.PASSWORD_EXPIRED.getCode() == statusCode) {</span>
+<span class="fc" id="L76">            return handlePasswordExpired(username);</span>
+        }
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (AuthenticationStatus.LOGIN_SUCCESS.getCode() != statusCode) {</span>
+<span class="nc" id="L79">            handleLoginFail(username, AuthenticationStatus.getMvgCode(statusCode), statusCode, resp.getStatus().getMessage());</span>
+        }
+<span class="fc" id="L81">        LNAAUserData userData = resp.getUserData();</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (Objects.isNull(userData)) {</span>
+<span class="nc" id="L83">            handleLoginFail(username, AuthenticationStatus.UNEXPECTED_ERROR.getMvgCode(), statusCode, resp.getStatus().getMessage());</span>
+        }
+<span class="pc bpc" id="L85" title="1 of 4 branches missed.">        if (StringUtils.isBlank(userData.getNVP(NVPName.BUNDLES.name())) &amp;&amp; CollectionUtils.isEmpty(userData.getRoles())) {</span>
+<span class="nc" id="L86">            handleLoginFail(username, AuthenticationStatus.INVALID_BUNDLES.getMvgCode(), statusCode, resp.getStatus().getMessage());</span>
+        }
+<span class="fc" id="L88">        UserDetails userDetails = userService.bindingUserDetails(resp.getUserData());</span>
+<span class="fc" id="L89">        return userDetails;</span>
+    }
+
+    private UserDetails handlePasswordResetRequire(String username) {
+<span class="fc" id="L93">        UserDto currentUser = new UserDto();</span>
+<span class="fc" id="L94">        currentUser.setUsername(username);</span>
+<span class="fc" id="L95">        GetUserResponse response = userService.fetchByUsername(currentUser);</span>
+<span class="fc" id="L96">        return response.getUserDetails();</span>
+    }
+
+    private Authentication getAuthentication(Authentication authentication, UserDetails userDetails) {
+<span class="fc" id="L100">        GetUserResponse userResponse = new GetUserResponseBuilder().withUserDetails(userDetails).build();</span>
+<span class="fc" id="L101">        return new UsernamePasswordAuthenticationToken(authentication.getPrincipal().toString().toLowerCase(), authentication.getCredentials(), Collections.singleton(userResponse));</span>
+    }
+
+    private void handleLoginFail(String username, String mvgCode, int lnaaCode, String message) {
+<span class="fc" id="L105">        UserDto currentUser = new UserDto();</span>
+<span class="fc" id="L106">        currentUser.setUsername(username);</span>
+<span class="fc" id="L107">        GetUserResponse response = userService.fetchByUsername(currentUser);</span>
+<span class="fc" id="L108">        authenticationLoggingService.sendTransactionToQueue(response, TransactionAction.INVALID_AUTHENTICATION);</span>
+<span class="fc" id="L109">        UserAccountDetails userAccountDetails = new UserAccountDetailsBuilder(response).build();</span>
+<span class="fc" id="L110">        throw new LNAAAuthenticationException(mvgCode, lnaaCode, message, userAccountDetails.getExpireDate(), userAccountDetails.getWrongLoginAttempts());</span>
+    }
+
+    private UserDetails handlePasswordExpired(String username) {
+<span class="fc" id="L114">        UserDto currentUser = new UserDto();</span>
+<span class="fc" id="L115">        currentUser.setUsername(username);</span>
+<span class="fc" id="L116">        GetUserResponse response = userService.fetchByUsername(currentUser);</span>
+<span class="fc" id="L117">        UserDetails userDetails = response.getUserDetails();</span>
+<span class="fc" id="L118">        userDetails.getAccountDetails().setExpired(true);</span>
+<span class="fc" id="L119">        return userDetails;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractTokenConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.enhancer</a> &gt; <span class="el_source">AbstractTokenConverter.java</span></div><h1>AbstractTokenConverter.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.enhancer;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mapview.ms.auth.entity.AccessToken;
+import com.mapview.ms.auth.entity.AccessTokenBuilder;
+import com.mapview.ms.auth.entity.MapviewUser;
+import com.mapview.ms.auth.entity.RoleBundle;
+import com.mapview.ms.auth.entity.UserAccountDetails;
+import com.mapview.ms.auth.entity.UserAccountDetailsBuilder;
+import com.mapview.ms.auth.entity.UserRequestResponse;
+import com.mapview.ms.auth.entity.UserRequestResponseBuilder;
+import com.mapview.ms.auth.request.RequestAccountDetails;
+import com.mapview.ms.auth.request.RequestAccountDetailsBuilder;
+import com.mapview.ms.auth.response.GetUserResponseBuilder;
+import com.mapview.ms.auth.service.lnaa.LNAASettings;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.TokenRequest;
+import org.springframework.security.oauth2.provider.token.AccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import com.mapview.ms.auth.response.GetUserResponse;
+import com.mapview.ms.auth.security.UserDetailAuthenticationConverter;
+import org.springframework.util.CollectionUtils;
+
+<span class="fc" id="L42">public abstract class AbstractTokenConverter extends JwtAccessTokenConverter {</span>
+    
+<span class="fc" id="L44">    protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractTokenConverter.class);</span>
+    private static final String ROLES = &quot;roles&quot;;
+    private static final String SELECT_ROLE = &quot;select_role&quot;;
+    private static final String RESET_REQUIRED = &quot;1&quot;;
+    private static final String KID_KEY = &quot;kid&quot;;
+    
+<span class="fc" id="L50">    private ObjectMapper objectMapper = new ObjectMapper();</span>
+    
+    protected String kid;
+
+    public abstract void defineSigner();
+    
+    @Autowired
+    private LNAASettings lnaaSettings;
+    
+    @Override
+    public Map&lt;String, Object&gt; decode(String token) {
+<span class="nc" id="L61">        defineSigner();</span>
+<span class="nc" id="L62">        return this.callDecodeParent(token);</span>
+    }
+    
+    protected AccessTokenConverter userDetailAuthenticationConverter() {
+<span class="fc" id="L66">        DefaultAccessTokenConverter converter = new DefaultAccessTokenConverter();</span>
+<span class="fc" id="L67">        converter.setUserTokenConverter(new UserDetailAuthenticationConverter());</span>
+<span class="fc" id="L68">        return converter;</span>
+    }
+    
+    public Map&lt;String, Object&gt; callDecodeParent(String token) {
+<span class="nc" id="L72">        return super.decode(token);</span>
+    }
+    
+    /**
+     * In case of password grant_type, some additional info will be added into the token.
+     * Once the information is added and encoded into the access and refresh tokens, the AdditionalInfo attribute
+     * from the accessTokenResponse will be deleted in order to avoid duplicates.
+     * 
+     * @param OAuth2AccessToken accessToken, OAuth2Authentication authentication
+     * @return OAuth2AccessToken the modified access token
+     */
+    @Override
+    public OAuth2AccessToken enhance(final OAuth2AccessToken accessToken, final OAuth2Authentication authentication) {
+<span class="fc" id="L85">        GetUserResponse userResponse = getUserDetail(authentication);</span>
+
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if(includeUserData(authentication)) {</span>
+<span class="fc" id="L88">            adjustAccessToken(accessToken, userResponse);</span>
+        }
+<span class="fc" id="L90">        this.defineSigner();</span>
+        
+<span class="fc" id="L92">        this.setKid(accessToken);</span>
+        
+<span class="fc" id="L94">        OAuth2AccessToken newAccessToken = this.callEnhanceParent(accessToken, authentication);</span>
+<span class="fc" id="L95">        return adjustFinalAccessToken(newAccessToken, userResponse);</span>
+    }
+
+	/**
+	 * Set the kid (key id) in the JWT token.
+	 * 
+	 * If additional_information map is an immutable empty collection, create a new one.
+	 * Otherwise add it to the map
+	 * 
+	 * @param accessToken
+	 */
+	private void setKid(OAuth2AccessToken accessToken) {
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">		if (this.kid !=  null) {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">			if (accessToken.getAdditionalInformation().isEmpty()) {</span>
+<span class="nc" id="L109">				((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(Map.of(KID_KEY, this.kid));</span>
+			} else {
+<span class="nc" id="L111">				((DefaultOAuth2AccessToken) accessToken).getAdditionalInformation().put(KID_KEY, this.kid);</span>
+			}
+		}
+<span class="fc" id="L114">	}</span>
+
+	public OAuth2AccessToken callEnhanceParent(final OAuth2AccessToken accessToken,
+            final OAuth2Authentication authentication) {
+<span class="nc" id="L118">        return super.enhance(accessToken, authentication);</span>
+    }
+
+    private void adjustAccessToken(OAuth2AccessToken accessToken, GetUserResponse userResponse) {
+<span class="fc" id="L122">        Map&lt;String, Object&gt; addAdditionalInfo = addAdditionalInfo(userResponse);</span>
+<span class="fc" id="L123">        ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(addAdditionalInfo);</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (addAdditionalInfo.containsKey(ROLES)) {</span>
+<span class="fc" id="L125">            ((DefaultOAuth2AccessToken) accessToken).setExpiration(new Date(System.currentTimeMillis() + (lnaaSettings.getTimeoutSelectRole() * 1000L)));</span>
+<span class="fc" id="L126">            ((DefaultOAuth2AccessToken) accessToken).setScope(Set.of(SELECT_ROLE));</span>
+        }
+<span class="fc" id="L128">    }</span>
+
+    private OAuth2AccessToken adjustFinalAccessToken(OAuth2AccessToken accessToken, GetUserResponse userResponse) {
+<span class="fc" id="L131">        final Map&lt;String, Object&gt; additionalInformation = getUserExtraInformation(userResponse, false);</span>
+<span class="fc" id="L132">        ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(additionalInformation);</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        if (CollectionUtils.containsInstance(accessToken.getScope(), SELECT_ROLE)) {</span>
+<span class="fc" id="L134">            ((DefaultOAuth2AccessToken) accessToken).setRefreshToken(null);</span>
+        }
+<span class="fc" id="L136">        return accessToken;</span>
+    }
+
+    private Map&lt;String, Object&gt; addAdditionalInfo(GetUserResponse userResponse) {
+<span class="fc" id="L140">        UserRequestResponse userRequestResponse = new UserRequestResponseBuilder(userResponse).build();</span>
+<span class="fc" id="L141">        UserAccountDetails userAccountDetails = new UserAccountDetailsBuilder(userResponse).build();</span>
+<span class="fc" id="L142">        boolean isResetPasswordRequired = isResetPasswordRequired(userAccountDetails);</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (userRequestResponse.getRoles().isEmpty()) {</span>
+<span class="fc" id="L144">            RequestAccountDetails accountDetails = new RequestAccountDetailsBuilder(userResponse).build();</span>
+<span class="fc" id="L145">            List&lt;String&gt; bundles = getAvailableBundles(userRequestResponse);</span>
+<span class="fc" id="L146">            return buildAdditionalInfo(accountDetails.getRequestCust(), accountDetails</span>
+<span class="fc" id="L147">                    .getRequestAccount(), bundles, isResetPasswordRequired, userRequestResponse.getSsoId(),userRequestResponse.getLanguage());</span>
+        }
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        if (userRequestResponse.getRoles().size() == 1) {</span>
+<span class="fc" id="L150">            String[] roleItems = StringUtils.split(userRequestResponse.getRoles().get(0).getRoleCode(), &quot;_&quot;);</span>
+<span class="fc" id="L151">            List&lt;String&gt; mainBundles = Stream.of(roleItems).skip(3).collect(Collectors.toList());</span>
+<span class="fc" id="L152">            userRequestResponse.setBundles(mainBundles);</span>
+<span class="fc" id="L153">            List&lt;String&gt; bundles = getAvailableBundles(userRequestResponse);</span>
+<span class="fc" id="L154">            return buildAdditionalInfo(roleItems[1], roleItems[2], bundles, isResetPasswordRequired, userRequestResponse</span>
+<span class="fc" id="L155">                    .getSsoId(),userRequestResponse.getLanguage());</span>
+        }
+<span class="fc" id="L157">        return getUserExtraInformation(userResponse, true);</span>
+    }
+
+    private Map&lt;String, Object&gt; buildAdditionalInfo(String customerNumber, String accountNumber, List&lt;String&gt; bundles,
+                                                    boolean isResetPasswordRequired, String ssoId, String language) {
+<span class="fc" id="L162">        AccessToken accessToken = AccessToken.builder()</span>
+<span class="fc" id="L163">                .customerNumber(customerNumber)</span>
+<span class="fc" id="L164">                .accountNumber(accountNumber)</span>
+<span class="fc" id="L165">                .bundles(bundles)</span>
+<span class="fc" id="L166">                .resetPasswordRequired(isResetPasswordRequired)</span>
+<span class="fc" id="L167">                .ssoId(ssoId)</span>
+<span class="fc" id="L168">                .language(language).build();</span>
+
+<span class="fc" id="L170">        return objectMapper.convertValue(accessToken, new TypeReference&lt;Map&lt;String, Object&gt;&gt;() {});</span>
+    }
+    
+    private List&lt;String&gt; getAvailableBundles(UserRequestResponse userRequestResponse) {
+<span class="fc" id="L174">        List&lt;String&gt; mainBundles = userRequestResponse.getBundles();</span>
+<span class="fc" id="L175">        return userRequestResponse.getRoleBundles().stream()</span>
+<span class="fc" id="L176">            .map(RoleBundle::getBundles)</span>
+<span class="fc" id="L177">            .flatMap(Collection::stream)</span>
+<span class="fc" id="L178">            .collect(Collectors.toCollection(() -&gt; mainBundles));</span>
+    }
+
+    private static boolean includeUserData(final OAuth2Authentication authentication) {
+<span class="fc" id="L182">      LOGGER.info(&quot;GRANT_TYPE: {}&quot;, authentication.getOAuth2Request().getGrantType());</span>
+<span class="fc" id="L183">      LOGGER.info(&quot;authentication.getPrincipal(): {}&quot;, authentication.getPrincipal());</span>
+<span class="fc" id="L184">      LOGGER.info(&quot;authentication.getOAuth2Request().getGrantType(): {}&quot;, authentication.getOAuth2Request().getGrantType());</span>
+<span class="fc bfc" id="L185" title="All 4 branches covered.">        return authentication.getOAuth2Request().getGrantType() == null &amp;&amp; authentication.getPrincipal() != null</span>
+<span class="fc bfc" id="L186" title="All 4 branches covered.">                || authentication.getOAuth2Request().getGrantType() != null &amp;&amp; authentication.getOAuth2Request().getGrantType().equalsIgnoreCase(&quot;password&quot;)</span>
+<span class="fc bfc" id="L187" title="All 4 branches covered.">                    || authentication.getOAuth2Request().getGrantType() != null &amp;&amp; authentication.getOAuth2Request().getGrantType().equalsIgnoreCase(&quot;refresh_token&quot;); </span>
+    }
+
+    private GetUserResponse getUserDetail(OAuth2Authentication authentication) {
+<span class="fc" id="L191">        Collection&lt;? extends GrantedAuthority&gt; authorities = authentication.getAuthorities();</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        if (CollectionUtils.isEmpty(authorities)) {</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">            if (authentication.getPrincipal() instanceof MapviewUser) {</span>
+<span class="fc" id="L194">                MapviewUser user = (MapviewUser) authentication.getPrincipal();</span>
+<span class="fc" id="L195">                adjustUserBundles(user, authentication);</span>
+<span class="fc" id="L196">                return new GetUserResponseBuilder().withUser(user).build();</span>
+            }
+<span class="fc" id="L198">            return new GetUserResponse();</span>
+        }
+<span class="fc" id="L200">        return (GetUserResponse) authorities.stream().findFirst().orElse(null);</span>
+    }
+    
+    private void adjustUserBundles(MapviewUser user, OAuth2Authentication authentication) {
+<span class="fc" id="L204">        TokenRequest tokenRequest = authentication.getOAuth2Request().getRefreshTokenRequest();</span>
+<span class="pc bpc" id="L205" title="3 of 4 branches missed.">        if (tokenRequest != null &amp;&amp; OAuth2AccessToken.REFRESH_TOKEN.equalsIgnoreCase(tokenRequest.getGrantType())) {</span>
+<span class="nc" id="L206">            Map&lt;String, Object&gt; map = decode(tokenRequest.getRequestParameters().get(OAuth2AccessToken.REFRESH_TOKEN));</span>
+<span class="nc" id="L207">            AccessToken accessToken = objectMapper.convertValue(map, AccessToken.class);</span>
+<span class="nc" id="L208">            user.setBundles(accessToken.getBundles());</span>
+<span class="nc" id="L209">            user.setCustomerNumber(accessToken.getCustomerNumber());</span>
+<span class="nc" id="L210">            user.setAccountNumber(accessToken.getAccountNumber());</span>
+        }
+<span class="fc" id="L212">    }</span>
+
+    private Map&lt;String, Object&gt; getUserExtraInformation(GetUserResponse response, boolean isSelectRole) {
+<span class="pc bpc" id="L215" title="1 of 4 branches missed.">        if (response != null &amp;&amp; response.getError() == null) {</span>
+<span class="fc" id="L216">            UserAccountDetails userAccountDetails = new UserAccountDetailsBuilder(response).build();</span>
+<span class="fc" id="L217">            AccessTokenBuilder accessTokenBuilder = new AccessTokenBuilder()</span>
+<span class="fc" id="L218">                .withPasswordExpireDate(userAccountDetails.getExpireDate())</span>
+<span class="fc" id="L219">                .withWrongPasswordLoginAttempts(userAccountDetails.getWrongLoginAttempts())</span>
+<span class="fc" id="L220">                .withResetPasswordRequired(isResetPasswordRequired(userAccountDetails));</span>
+            
+<span class="fc bfc" id="L222" title="All 2 branches covered.">            if (isSelectRole) {</span>
+<span class="fc" id="L223">                UserRequestResponse userRequestResponse = new UserRequestResponseBuilder(response).build();</span>
+<span class="fc" id="L224">                accessTokenBuilder</span>
+<span class="fc" id="L225">                    .withRoles(userRequestResponse.getRoles())</span>
+<span class="fc" id="L226">                    .withRoleBundles(userRequestResponse.getRoleBundles())</span>
+<span class="fc" id="L227">                    .withLanguage(userRequestResponse.getLanguage());</span>
+            }
+<span class="fc" id="L229">            return objectMapper.convertValue(accessTokenBuilder.build(), new TypeReference&lt;Map&lt;String, Object&gt;&gt;() {});</span>
+        } else {
+<span class="fc" id="L231">            return new HashMap&lt;&gt;();</span>
+        }
+    }
+
+    private boolean isResetPasswordRequired(UserAccountDetails userAccountDetails) {
+<span class="pc bpc" id="L236" title="1 of 4 branches missed.">        return RESET_REQUIRED.equals(userAccountDetails.getResetRequired()) || userAccountDetails.isExpired();</span>
+    }
+
+ }
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

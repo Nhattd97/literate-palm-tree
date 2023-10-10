@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserAdapterService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service</a> &gt; <span class="el_source">UserAdapterService.java</span></div><h1>UserAdapterService.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service;
+
+import com.mapview.ms.auth.beans.UserDto;
+import com.mapview.ms.auth.controller.UserRequest;
+import com.mapview.ms.auth.entity.SSOUser;
+import com.mapview.ms.auth.entity.UserRequestResponse;
+import com.mapview.ms.auth.entity.UserSearchResponse;
+import com.mapview.ms.auth.request.*;
+import com.mapview.ms.auth.request.search.UserSearchCriteria;
+import com.mapview.ms.auth.response.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.stereotype.Service;
+
+@Service(&quot;userAdapterService&quot;)
+<span class="fc" id="L20">public class UserAdapterService implements UserService{</span>
+    @Autowired
+    private UserServiceFactory userServiceFactory;
+
+    private String userServiceType;
+
+    @Value(&quot;${mvg.user-service-type}&quot;)
+    public void setUserServiceType(String userServiceType) {
+<span class="fc" id="L28">        this.userServiceType = userServiceType;</span>
+<span class="fc" id="L29">    }</span>
+
+    public CreateUserResponse create(UserRequestResponse user) {
+<span class="fc" id="L32">        return getUserService(user.getSsoUser(), userServiceType).create(user);</span>
+    }
+
+    private UserService getUserService(Boolean ssoUser, String userServiceType) {
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (Boolean.TRUE.equals(ssoUser)) {</span>
+<span class="fc" id="L37">            return userServiceFactory.getUserService(UserServiceType.SSO.name());</span>
+        }
+
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (UserServiceType.LNAA.name().equalsIgnoreCase(userServiceType)) {</span>
+<span class="fc" id="L41">            return userServiceFactory.getUserService(UserServiceType.LNAA.name());</span>
+        }
+
+<span class="fc" id="L44">        return userServiceFactory.getUserService(UserServiceType.DB.name());</span>
+    }
+
+    public CreateBatchResponse createBatch(UserRequest users) {
+<span class="fc" id="L48">        return getUserService(false, userServiceType).createBatch(users);</span>
+    }
+
+    public void deleteAll() {
+<span class="fc" id="L52">        getUserService(false, userServiceType).deleteAll();</span>
+<span class="fc" id="L53">    }</span>
+
+    public GetUserResponse fetchByUsername(UserDto user) {
+<span class="fc" id="L56">        return getUserService(user.getSsoUser(), userServiceType).fetchByUsername(user);</span>
+    }
+
+    public UpdateUserResponse updateUser(UpdateUserRequest user) {
+<span class="fc" id="L60">        return getUserService(user.getSsoUser(), userServiceType).updateUser(user);</span>
+    }
+
+    public UpdateUserStatusResponse updateUserStatus(UpdateUserStatusRequest user) {
+<span class="fc" id="L64">        return getUserService(user.getSsoUser(), userServiceType).updateUserStatus(user);</span>
+    }
+
+    public UserSearchResponse search(UserSearchCriteria criteria) {
+<span class="fc" id="L68">        return getUserService(criteria.getSsoUser(), userServiceType).search(criteria);</span>
+    }
+
+    public AdminChangeUserPasswordResponse changeUserPassword(AdminChangeUserPasswordRequest request) {
+<span class="fc" id="L72">        return getUserService(false, userServiceType).changeUserPassword(request);</span>
+    }
+
+    public UnlockUserResponse unlockUser(UnlockUserRequest request) {
+<span class="fc" id="L76">        return getUserService(false, userServiceType).unlockUser(request);</span>
+    }
+
+    public ResetPasswordResponse resetPasswordRequest(ResetPasswordRequest request) {
+<span class="fc" id="L80">        return getUserService(false, userServiceType).resetPasswordRequest(request);</span>
+    }
+
+    public ChangePasswordResponse changePassword(String username, ChangePasswordRequest request) {
+<span class="fc" id="L84">        return getUserService(false, userServiceType).changePassword(username, request);</span>
+    }
+
+    public OAuth2AccessToken selectRole(OAuth2Authentication authentication, RequestSelectRole request) {
+<span class="fc" id="L88">        return getUserService(false, userServiceType).selectRole(authentication, request);</span>
+    }
+
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        Boolean ssoUser = username.startsWith(SSOUser.SSO_USERNAME_PREFIX) ? Boolean.TRUE : Boolean.FALSE;</span>
+<span class="fc" id="L93">        return getUserService(ssoUser, userServiceType).loadUserByUsername(username);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

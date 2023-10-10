@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAAGetUserRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans.detail</a> &gt; <span class="el_source">LNAAGetUserRequest.java</span></div><h1>LNAAGetUserRequest.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans.detail;
+
+import java.util.Objects;
+
+import com.mapview.ms.auth.beans.LNAAEncode;
+import com.mapview.ms.auth.beans.UserDto;
+import com.mapview.ms.auth.service.lnaa.LNAAException;
+import com.mapview.ms.auth.service.lnaa.LNAASettings;
+import com.mapview.ms.auth.service.lnaa.beans.LNAARequestSession;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAServiceRequest;
+import org.apache.commons.lang3.StringUtils;
+
+public class LNAAGetUserRequest extends LNAAServiceRequest&lt;UserDto&gt; {
+
+    private LNAAGetUserData data;
+    private LNAARequestSession session;
+
+<span class="fc" id="L18">    public LNAAGetUserRequest() {</span>
+
+<span class="fc" id="L20">    }</span>
+
+	@Override
+	public void validateRequest(UserDto request) throws LNAAException {
+		
+<span class="fc" id="L25">	}</span>
+
+	public LNAAServiceRequest init(LNAASettings lnaaSettings, UserDto user, LNAARequestSession session)	{
+<span class="fc" id="L28">        LNAAGetUserData data = new LNAAGetUserData();</span>
+<span class="fc" id="L29">        data.setDomain(lnaaSettings.getUser_domain());</span>
+<span class="fc" id="L30">        data.setTimeout(lnaaSettings.getTimeout());</span>
+<span class="fc" id="L31">        data.setLoginId(user.getUsername() + &quot;@&quot; + lnaaSettings.getUser_domain());</span>
+        
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (StringUtils.endsWithIgnoreCase(user.getUsername(), LNAAEncode.AT_EU.getEncode())) {</span>
+<span class="fc" id="L34">            data.setLoginId(StringUtils.removeEndIgnoreCase(user.getUsername(), LNAAEncode.AT_EU.getEncode()));</span>
+<span class="fc" id="L35">            data.setDomain(lnaaSettings.getInternalUserDomain());</span>
+        }
+        
+<span class="fc" id="L38">        setData(data);</span>
+<span class="fc" id="L39">        setSession(session);</span>
+
+<span class="fc" id="L41">        return this;</span>
+	}
+    
+    public LNAAGetUserData getData() {
+<span class="fc" id="L45">        return data;</span>
+    }
+
+    public void setData(LNAAGetUserData data) {
+<span class="fc" id="L49">        this.data = data;</span>
+<span class="fc" id="L50">    }</span>
+
+    public LNAARequestSession getSession() {
+<span class="fc" id="L53">        return session;</span>
+    }
+
+    public void setSession(LNAARequestSession session) {
+<span class="fc" id="L57">        this.session = session;</span>
+<span class="fc" id="L58">    }</span>
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (this == o) return true;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (!(o instanceof LNAAGetUserRequest)) return false;</span>
+<span class="fc" id="L64">        LNAAGetUserRequest that = (LNAAGetUserRequest) o;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        return Objects.equals(getData(), that.getData()) &amp;&amp;</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                Objects.equals(getSession(), that.getSession());</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L71">        return Objects.hash(getData(), getSession());</span>
+    }
+
+
+    @Override
+    public String toString() {
+<span class="fc" id="L77">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L78">        sb.append(&quot;class LNAAGetUserRequest {\n&quot;);</span>
+<span class="fc" id="L79">        sb.append(&quot;    &quot;).append(toIndentedString(super.toString())).append(&quot;\n&quot;);</span>
+<span class="fc" id="L80">        sb.append(&quot;    data: &quot;).append(toIndentedString(data)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L81">        sb.append(&quot;    session: &quot;).append(toIndentedString(session)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L82">        sb.append(&quot;}&quot;);</span>
+<span class="fc" id="L83">        return sb.toString();</span>
+    }
+
+    /**
+     * Convert the given object to string with each line indented by 4 spaces
+     * (except the first line).
+     */
+    private String toIndentedString(Object o) {
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (o == null) {</span>
+<span class="fc" id="L92">            return &quot;null&quot;;</span>
+        }
+<span class="fc" id="L94">        return o.toString().replace(&quot;\n&quot;, &quot;\n    &quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

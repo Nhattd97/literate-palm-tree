@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KeyPairFile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.secrets</a> &gt; <span class="el_source">KeyPairFile.java</span></div><h1>KeyPairFile.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.secrets;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.UUID;
+
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+
+import com.mapview.ms.auth.exceptions.MapviewGlobalException;
+
+public class KeyPairFile {
+    
+    private File jksFile;
+    private char[] encoded;
+    private File publicKey;
+    
+<span class="fc" id="L33">    public KeyPairFile(String alias) {</span>
+<span class="fc" id="L34">        build(alias);</span>
+<span class="fc" id="L35">    }</span>
+
+    public File getJksFile() {
+<span class="fc" id="L38">        return jksFile;</span>
+    }
+
+    private void setJksFile(File jksFile) {
+<span class="fc" id="L42">        this.jksFile = jksFile;</span>
+<span class="fc" id="L43">    }</span>
+
+    public char[] getPassword() {
+<span class="fc" id="L46">        return encoded;</span>
+    }
+
+    private void setPassword(char[] encoded) {
+<span class="fc" id="L50">        this.encoded = encoded;</span>
+<span class="fc" id="L51">    }</span>
+    
+    public File getPublicKey() {
+<span class="fc" id="L54">        return publicKey;</span>
+    }
+
+    private void setPublicKey(PublicKey pKey) throws IOException {
+<span class="fc" id="L58">        File tmpFile = File.createTempFile(&quot;keystore&quot;, &quot;.pub&quot;);</span>
+<span class="fc" id="L59">        FileOutputStream fos = new FileOutputStream(tmpFile);</span>
+<span class="fc" id="L60">        fos.write(pKey.getEncoded());</span>
+<span class="fc" id="L61">        fos.close();</span>
+<span class="fc" id="L62">        this.publicKey = tmpFile;</span>
+<span class="fc" id="L63">    }</span>
+
+    private void build(String alias) {
+    	try {
+    		
+<span class="fc" id="L68">    	    String r = UUID.randomUUID().toString();</span>
+<span class="fc" id="L69">    	    char[] random = r.toCharArray();</span>
+<span class="fc" id="L70">    		KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());</span>
+<span class="fc" id="L71">            ks.load(null, random);</span>
+<span class="fc" id="L72">            File tmpFile = File.createTempFile(&quot;keystore&quot;, &quot;.jks&quot;);</span>
+            
+<span class="fc" id="L74">            addKeyPairToStore(ks, alias, random);</span>
+            
+<span class="fc" id="L76">            FileOutputStream fos = new FileOutputStream(tmpFile);</span>
+<span class="fc" id="L77">            ks.store(fos, random);</span>
+<span class="fc" id="L78">            fos.close();</span>
+            
+<span class="fc" id="L80">            this.setJksFile(tmpFile);</span>
+<span class="fc" id="L81">            this.setPassword(random);</span>
+<span class="fc" id="L82">        } catch (Exception e) {</span>
+<span class="fc" id="L83">            throw new MapviewGlobalException(&quot;Could not create key pair -&gt; &quot; + e.getMessage(), e);</span>
+<span class="fc" id="L84">        }</span>
+<span class="fc" id="L85">    }</span>
+    
+    private void addKeyPairToStore(KeyStore ks, String alias, char[] pass) throws Exception {
+<span class="fc" id="L88">        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(&quot;RSA&quot;);</span>
+<span class="fc" id="L89">        keyGen.initialize(2048);</span>
+<span class="fc" id="L90">        KeyPair keyPair = keyGen.genKeyPair();</span>
+<span class="fc" id="L91">        X509Certificate certificate = generateCertificate(keyPair);</span>
+<span class="fc" id="L92">        X509Certificate[] chain = new X509Certificate[1];</span>
+<span class="fc" id="L93">        chain[0] = certificate;</span>
+<span class="fc" id="L94">        ks.setKeyEntry(alias, keyPair.getPrivate(), pass, chain);</span>
+<span class="fc" id="L95">        this.setPublicKey(certificate.getPublicKey());</span>
+<span class="fc" id="L96">    }</span>
+
+    private static X509Certificate generateCertificate(KeyPair keyPair) throws Exception {
+<span class="fc" id="L99">        SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());</span>
+        
+<span class="fc" id="L101">        X500Name issuer = new X500Name(&quot;CN=MapviewGlobalLexisNexis&quot;);</span>
+        
+<span class="fc" id="L103">        Instant now = Instant.now();</span>
+<span class="fc" id="L104">        Date notBefore = Date.from(now);</span>
+<span class="fc" id="L105">        Date notAfter = Date.from(now.plus(Duration.ofDays(30)));</span>
+        
+<span class="fc" id="L107">        X509v3CertificateBuilder certif = new X509v3CertificateBuilder(issuer, BigInteger.valueOf(now.toEpochMilli()), </span>
+                notBefore, notAfter, issuer, publicKeyInfo);
+        
+<span class="fc" id="L110">        ContentSigner sigGen = new JcaContentSignerBuilder(&quot;SHA1WithRSA&quot;).build(keyPair.getPrivate());</span>
+        
+<span class="fc" id="L112">        X509CertificateHolder certHolder = certif.build(sigGen);</span>
+        
+<span class="fc" id="L114">        return new JcaX509CertificateConverter().getCertificate(certHolder);</span>
+     }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

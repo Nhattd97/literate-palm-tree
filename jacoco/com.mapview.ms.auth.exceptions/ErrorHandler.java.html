@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ErrorHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.exceptions</a> &gt; <span class="el_source">ErrorHandler.java</span></div><h1>ErrorHandler.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.exceptions;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+/**
+ * ErrorHandler class is to handle and log exceptions gracefully
+ *
+ */
+@ControllerAdvice
+<span class="fc" id="L29">public class ErrorHandler {</span>
+
+<span class="fc" id="L31">	private final Logger logger = LoggerFactory.getLogger(getClass());</span>
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public ResponseEntity&lt;ExceptionResponse&gt; illegalArgument(IllegalArgumentException ex) {
+
+<span class="fc" id="L37">		ExceptionResponse response = new ExceptionResponse(new Date(), ErrorCode.BAD_REQUEST.getCode(),</span>
+<span class="fc" id="L38">				ex.getMessage(), getResponseId(ex));</span>
+		
+<span class="fc" id="L40">		logger.info(&quot;Returning HTTP &quot; + HttpStatus.BAD_REQUEST, ex);</span>
+<span class="fc" id="L41">		return new ResponseEntity&lt;ExceptionResponse&gt;(response, HttpStatus.BAD_REQUEST);</span>
+	}
+
+	@ExceptionHandler(InvalidConfigurationPropertyValueException.class)
+	@ResponseStatus(HttpStatus.NOT_FOUND)
+	public ResponseEntity&lt;ExceptionResponse&gt; resourceNotFound(InvalidConfigurationPropertyValueException ex) {
+
+<span class="fc" id="L48">		ExceptionResponse response = new ExceptionResponse(new Date(), ErrorCode.NOT_FOUND.getCode(),</span>
+<span class="fc" id="L49">				ex.getMessage(), getResponseId(ex));</span>
+		
+<span class="fc" id="L51">		logger.info(&quot;Returning HTTP &quot; + HttpStatus.NOT_FOUND, ex);</span>
+<span class="fc" id="L52">		return new ResponseEntity&lt;ExceptionResponse&gt;(response, HttpStatus.NOT_FOUND);</span>
+	}
+
+	/**
+	 * When there is a runtime exception thrown due to bad data, we only send the
+	 * error message as a response instead of sending the complete stack trace.
+	 * 
+	 * @param ex
+	 * @return ResponseEntity
+	 */
+	@ExceptionHandler(MapviewGlobalException.class)
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public ResponseEntity&lt;ExceptionResponse&gt; mapviewGlobalExp(MapviewGlobalException ex) {
+		
+<span class="fc" id="L66">		ExceptionResponse response = new ExceptionResponse(new Date(), ex.getErrorCode().getCode(),</span>
+<span class="fc" id="L67">				ex.getMessage(), getResponseId(ex));</span>
+
+<span class="fc" id="L69">		logger.info(&quot;Returning HTTP &quot; + HttpStatus.BAD_REQUEST, ex);</span>
+<span class="fc" id="L70">		return new ResponseEntity&lt;ExceptionResponse&gt;(response, HttpStatus.BAD_REQUEST);</span>
+	}
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public ResponseEntity&lt;ExceptionResponse&gt; httpRequestMethodNotSupportedException(
+            HttpRequestMethodNotSupportedException ex) {
+
+<span class="nc" id="L78">        ExceptionResponse response = new ExceptionResponse(new Date(), ErrorCode.BAD_REQUEST.getCode(), ex.getMessage(),</span>
+<span class="nc" id="L79">                getResponseId(ex));</span>
+
+<span class="nc" id="L81">        logger.info(&quot;Returning HTTP &quot; + HttpStatus.METHOD_NOT_ALLOWED, ex);</span>
+<span class="nc" id="L82">        return new ResponseEntity&lt;ExceptionResponse&gt;(response, HttpStatus.METHOD_NOT_ALLOWED);</span>
+    }
+
+	/**
+	 * Handles all generic exceptions 
+     * 
+     * @param ex
+     * @return ResponseEntity
+     */
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity&lt;ExceptionResponse&gt; exp(Exception ex) {
+
+<span class="fc" id="L95">		ExceptionResponse response = new ExceptionResponse(new Date(), ErrorCode.INTERNAL_SERVER_ERROR.getCode(),</span>
+<span class="fc" id="L96">				ex.getMessage(), getResponseId(ex));</span>
+		
+<span class="fc" id="L98">        logger.info(&quot;Returning HTTP &quot; + HttpStatus.INTERNAL_SERVER_ERROR, ex);</span>
+<span class="fc" id="L99">        return new ResponseEntity&lt;ExceptionResponse&gt;(response, HttpStatus.INTERNAL_SERVER_ERROR);</span>
+    }
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity&lt;Object&gt; handleMethodArgumentNotValid(
+			MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+
+<span class="fc" id="L106">		ExceptionResponse response = new ExceptionResponse(new Date(), ErrorCode.ERROR_VALIDATING_REQUEST.getCode(),</span>
+<span class="fc" id="L107">				String.format(ErrorCode.ERROR_VALIDATING_REQUEST.getCompareString(), getErrorFields(ex)), getResponseId(ex));</span>
+<span class="fc" id="L108">		logger.info(&quot;Returning HTTP &quot; + HttpStatus.BAD_REQUEST, ex);</span>
+
+<span class="fc" id="L110">		return new ResponseEntity&lt;Object&gt;(response, HttpStatus.BAD_REQUEST);</span>
+	}
+
+	private static String getErrorFields(MethodArgumentNotValidException ex) {
+<span class="fc" id="L114">		String specificMessage = new String();</span>
+
+<span class="fc" id="L116">		List&lt;FieldError&gt; bindingResult = ((MethodArgumentNotValidException) ex).getBindingResult().getFieldErrors();</span>
+<span class="fc" id="L117">		List&lt;String&gt; messages = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">		for (FieldError fieldError : bindingResult) {</span>
+<span class="fc" id="L119">			messages.add(fieldError.getField());</span>
+<span class="fc" id="L120">		}</span>
+<span class="fc" id="L121">		return StringUtils.join(messages, &quot;,&quot;);</span>
+
+	}
+
+	/**
+	 * Generate a common error log format for exceptions.
+	 * Correlate what is returned to the user in the response to the exception with a trace UUID 
+	 * 
+	 * @param ex the exception to log
+	 * @return the UUID String to correlate the exception log to the response message
+	 */
+	private String getResponseId(Exception ex) {
+<span class="fc" id="L133">		String responseId = UUID.randomUUID().toString();    </span>
+<span class="fc" id="L134">		logger.error(responseId + &quot; | &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L135">		return responseId;</span>
+	}    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

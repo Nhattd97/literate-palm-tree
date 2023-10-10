@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAARestTemplate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa</a> &gt; <span class="el_source">LNAARestTemplate.java</span></div><h1>LNAARestTemplate.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa;
+
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.SSLContext;
+
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+@Component
+public class LNAARestTemplate extends RestTemplate {
+
+    /**
+     * Create the rest template and use a custom TrustStrategy to cater for the fact that the LexisNexis LNAA 
+     * SSL certificates are self-signed and cannot be implicitly verified by the JVM.
+     */       
+    public LNAARestTemplate() throws Exception  {
+<span class="fc" id="L26">        super(createRequestFactory());</span>
+<span class="fc" id="L27">    }</span>
+    
+    private static HttpComponentsClientHttpRequestFactory createRequestFactory() throws Exception {
+
+<span class="fc" id="L31">        SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(null, createTrustStrategy()).build();</span>
+<span class="fc" id="L32">        SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());</span>
+<span class="fc" id="L33">        CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(csf).build();</span>
+<span class="fc" id="L34">        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();</span>
+<span class="fc" id="L35">        requestFactory.setHttpClient(httpClient);</span>
+        
+<span class="fc" id="L37">        return requestFactory;</span>
+            
+    }
+    
+    public static TrustStrategy createTrustStrategy()    {
+     
+<span class="fc" id="L43">        return new TrustStrategy() {</span>
+            @Override
+            public boolean isTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+<span class="fc" id="L46">                return true;</span>
+            }
+        };
+        
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

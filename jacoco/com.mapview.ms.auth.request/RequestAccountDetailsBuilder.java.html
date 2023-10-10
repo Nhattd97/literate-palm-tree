@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RequestAccountDetailsBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.request</a> &gt; <span class="el_source">RequestAccountDetailsBuilder.java</span></div><h1>RequestAccountDetailsBuilder.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.request;
+
+import com.mapview.ms.auth.response.GetUserResponse;
+
+import java.util.Objects;
+
+public class RequestAccountDetailsBuilder {
+
+    private RequestAccountDetails requestAccountDetails;
+
+<span class="fc" id="L11">    public RequestAccountDetailsBuilder() {</span>
+<span class="fc" id="L12">        requestAccountDetails = new RequestAccountDetails();</span>
+<span class="fc" id="L13">    }</span>
+
+<span class="fc" id="L15">    public RequestAccountDetailsBuilder(GetUserResponse response) {</span>
+        try {
+<span class="fc" id="L17">            RequestAccountDetails accountDetails = response.getUserDetails().getUser().getAccountDetails();</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">            requestAccountDetails = Objects.isNull(accountDetails) ? new RequestAccountDetails() : accountDetails;</span>
+<span class="fc" id="L19">        } catch (Exception e) {</span>
+<span class="fc" id="L20">            requestAccountDetails = new RequestAccountDetails();</span>
+<span class="fc" id="L21">        }</span>
+<span class="fc" id="L22">    }</span>
+
+    public RequestAccountDetailsBuilder withCustomerNumber(String customerNumber) {
+<span class="fc" id="L25">        requestAccountDetails.setRequestCust(customerNumber);</span>
+<span class="fc" id="L26">        return this;</span>
+    }
+
+    public RequestAccountDetailsBuilder withAccountNumber(String accountNumber) {
+<span class="fc" id="L30">        requestAccountDetails.setRequestAccount(accountNumber);</span>
+<span class="fc" id="L31">        return this;</span>
+    }
+
+    public RequestAccountDetails build() {
+<span class="fc" id="L35">        return requestAccountDetails;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

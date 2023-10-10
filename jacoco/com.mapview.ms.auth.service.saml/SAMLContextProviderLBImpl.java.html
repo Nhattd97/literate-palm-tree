@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SAMLContextProviderLBImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.saml</a> &gt; <span class="el_source">SAMLContextProviderLBImpl.java</span></div><h1>SAMLContextProviderLBImpl.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.saml;
+
+import com.mapview.ms.auth.beans.ExtendedMetadataRollover;
+import org.apache.commons.lang3.StringUtils;
+import org.opensaml.saml2.encryption.Decrypter;
+import org.opensaml.xml.encryption.EncryptedKeyResolver;
+import org.opensaml.xml.security.credential.Credential;
+import org.opensaml.xml.security.credential.UsageType;
+import org.opensaml.xml.security.keyinfo.KeyInfoCredentialResolver;
+import org.opensaml.xml.security.keyinfo.StaticKeyInfoCredentialResolver;
+import org.springframework.security.saml.context.SAMLContextProviderLB;
+import org.springframework.security.saml.context.SAMLMessageContext;
+import org.springframework.security.saml.metadata.ExtendedMetadata;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+public class SAMLContextProviderLBImpl extends SAMLContextProviderLB {
+
+    private final EncryptedKeyResolver encryptedKeyResolver;
+
+    @Override
+    protected void populateDecrypter(SAMLMessageContext samlContext) {
+<span class="fc" id="L25">        List&lt;Credential&gt; encryptionCredentials = getEncryptionCredentials(samlContext.getLocalExtendedMetadata());</span>
+<span class="fc" id="L26">        KeyInfoCredentialResolver resolver = new StaticKeyInfoCredentialResolver(encryptionCredentials);</span>
+
+<span class="fc" id="L28">        Decrypter decrypter = new Decrypter(null, resolver, encryptedKeyResolver);</span>
+<span class="fc" id="L29">        decrypter.setRootInNewDocument(true);</span>
+
+<span class="fc" id="L31">        samlContext.setLocalDecrypter(decrypter);</span>
+<span class="fc" id="L32">    }</span>
+
+    private List&lt;Credential&gt; getEncryptionCredentials(ExtendedMetadata extendedMetadata) {
+<span class="fc" id="L35">        List&lt;Credential&gt; encryptionCredentials = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (StringUtils.isNotBlank(extendedMetadata.getEncryptionKey())) {</span>
+<span class="fc" id="L37">            encryptionCredentials.add(keyManager.getCredential(extendedMetadata.getEncryptionKey()));</span>
+        } else {
+<span class="fc" id="L39">            encryptionCredentials.add(keyManager.getDefaultCredential());</span>
+        }
+
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        if (extendedMetadata instanceof ExtendedMetadataRollover) {</span>
+<span class="fc" id="L43">            ExtendedMetadataRollover extendedMetadataRollover = (ExtendedMetadataRollover) extendedMetadata;</span>
+<span class="fc" id="L44">            Map&lt;UsageType, String&gt; rolloverKeys = extendedMetadataRollover.getRolloverKeys();</span>
+<span class="fc bfc" id="L45" title="All 4 branches covered.">            if (rolloverKeys != null &amp;&amp; rolloverKeys.containsKey(UsageType.ENCRYPTION)) {</span>
+<span class="fc" id="L46">                String rolloverKeyAlias = rolloverKeys.get(UsageType.ENCRYPTION);</span>
+<span class="fc" id="L47">                encryptionCredentials.add(keyManager.getCredential(rolloverKeyAlias));</span>
+            }
+        }
+<span class="fc" id="L50">        return encryptionCredentials;</span>
+    }
+
+<span class="fc" id="L53">    public SAMLContextProviderLBImpl(EncryptedKeyResolver encryptedKeyResolver) {</span>
+<span class="fc" id="L54">        this.encryptedKeyResolver = encryptedKeyResolver;</span>
+<span class="fc" id="L55">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

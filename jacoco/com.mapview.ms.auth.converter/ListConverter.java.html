@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.converter</a> &gt; <span class="el_source">ListConverter.java</span></div><h1>ListConverter.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.converter;
+
+import java.util.List;
+
+import javax.persistence.AttributeConverter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mapview.ms.auth.exceptions.MapviewGlobalException;
+
+/**
+ * Convert from List&lt;T&gt; to database column byte[] 
+ * And from database column byte[] to List&lt;T&gt;
+ * @author breejo01
+ *
+ * @param &lt;T&gt;
+ */
+<span class="fc" id="L22">public class ListConverter&lt;T&gt; implements AttributeConverter&lt;List&lt;T&gt;, String&gt; {</span>
+
+<span class="fc" id="L24">	protected Logger LOGGER = LoggerFactory.getLogger(this.getClass());</span>
+
+	@Override
+	public String convertToDatabaseColumn(final List&lt;T&gt; attribute) {
+		try {
+			
+<span class="fc" id="L30">			String jsonString = getObjectMapper().writeValueAsString(attribute);</span>
+<span class="fc" id="L31">			return jsonString;</span>
+<span class="fc" id="L32">		} catch (JsonProcessingException e) {</span>
+<span class="fc" id="L33">			LOGGER.error(&quot;Error parsing values &quot; + attribute.toString(), e);</span>
+<span class="fc" id="L34">			throw new MapviewGlobalException(&quot;Error parsing values &quot; + attribute.toString(), e);</span>
+		}
+	}
+	
+	@Override
+	public List&lt;T&gt; convertToEntityAttribute(final String dbData) {
+		try {
+<span class="fc" id="L41">			return getObjectMapper().readValue(dbData, new TypeReference&lt;List&lt;T&gt;&gt;() {</span>
+			});
+<span class="fc" id="L43">		} catch (Exception e) {</span>
+<span class="fc" id="L44">			LOGGER.error(&quot;Error parsing values &quot; + dbData.toString(), e);</span>
+<span class="fc" id="L45">			throw new MapviewGlobalException(&quot;Error parsing values &quot; + dbData.toString(), e);</span>
+		}
+	}
+	
+	/**
+	 * Create a new ObjectMapper
+	 * @return
+	 */
+	public ObjectMapper getObjectMapper() {
+<span class="fc" id="L54">	    return new ObjectMapper();</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

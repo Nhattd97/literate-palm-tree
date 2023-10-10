@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserAccountDetailsBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.entity</a> &gt; <span class="el_source">UserAccountDetailsBuilder.java</span></div><h1>UserAccountDetailsBuilder.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.entity;
+
+import com.mapview.ms.auth.response.GetUserResponse;
+
+import java.util.Objects;
+
+public class UserAccountDetailsBuilder {
+
+    private UserAccountDetails userAccountDetails;
+
+<span class="fc" id="L11">    public UserAccountDetailsBuilder() {</span>
+<span class="fc" id="L12">        userAccountDetails = new UserAccountDetails();</span>
+<span class="fc" id="L13">    }</span>
+
+<span class="fc" id="L15">    public UserAccountDetailsBuilder(GetUserResponse userResponse) {</span>
+        try {
+<span class="fc" id="L17">            UserAccountDetails accountDetails = userResponse.getUserDetails().getAccountDetails();</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">            userAccountDetails = Objects.isNull(accountDetails) ? new UserAccountDetails() : accountDetails;</span>
+<span class="fc" id="L19">        } catch (Exception e) {</span>
+<span class="fc" id="L20">            userAccountDetails = new UserAccountDetails();</span>
+<span class="fc" id="L21">        }</span>
+<span class="fc" id="L22">    }</span>
+
+    public UserAccountDetailsBuilder withLastLogin(String lastLogin) {
+<span class="fc" id="L25">        userAccountDetails.setLastLogin(lastLogin);</span>
+<span class="fc" id="L26">        return this;</span>
+    }
+
+    public UserAccountDetailsBuilder withStatus(String status) {
+<span class="fc" id="L30">        userAccountDetails.setStatus(status);</span>
+<span class="fc" id="L31">        return this;</span>
+    }
+
+    public UserAccountDetailsBuilder withLocked(boolean locked) {
+<span class="fc" id="L35">        userAccountDetails.setLocked(locked);</span>
+<span class="fc" id="L36">        return this;</span>
+    }
+
+    public UserAccountDetailsBuilder withPasswordExpired(boolean isExpired) {
+<span class="fc" id="L40">        userAccountDetails.setExpired(isExpired);</span>
+<span class="fc" id="L41">        return this;</span>
+    }
+
+    public UserAccountDetailsBuilder withPasswordExpireDate(String expireDate) {
+<span class="fc" id="L45">        userAccountDetails.setExpireDate(expireDate);</span>
+<span class="fc" id="L46">        return this;</span>
+    }
+
+    public UserAccountDetailsBuilder withWrongPasswordLoginAttempts(String wrongLoginAttempts) {
+<span class="fc" id="L50">        userAccountDetails.setWrongLoginAttempts(wrongLoginAttempts);</span>
+<span class="fc" id="L51">        return this;</span>
+    }
+
+    public UserAccountDetailsBuilder withResetPasswordRequired(String resetRequired) {
+<span class="fc" id="L55">        userAccountDetails.setResetRequired(resetRequired);</span>
+<span class="fc" id="L56">        return this;</span>
+    }
+
+    public UserAccountDetails build() {
+<span class="fc" id="L60">        return userAccountDetails;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

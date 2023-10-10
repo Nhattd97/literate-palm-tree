@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SamlAuthenticationFailureHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.utils.saml</a> &gt; <span class="el_source">SamlAuthenticationFailureHandler.java</span></div><h1>SamlAuthenticationFailureHandler.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.utils.saml;
+
+import com.mapview.ms.auth.exceptions.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+<span class="fc" id="L15">@Slf4j</span>
+public class SamlAuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
+
+    private static final String ERROR_MESSAGE_PATTERN = &quot;?errorCode=%s&amp;errorMessage=%s&quot;;
+
+<span class="fc" id="L20">    @Value(&quot;${mvg.security.saml.failureRedirectUrl}&quot;)</span>
+    private String failureRedirectUrl = &quot;/&quot;;
+
+    @Autowired
+    private ResourceServerTokenServices resourceTokenServices;
+
+    public SamlAuthenticationFailureHandler(String defaultFailureUrl) {
+<span class="fc" id="L27">        super();</span>
+<span class="fc" id="L28">        this.setDefaultFailureUrl(defaultFailureUrl);</span>
+<span class="fc" id="L29">        this.setUseForward(true);</span>
+<span class="fc" id="L30">    }</span>
+
+    @Override
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException exception) throws IOException {
+<span class="fc" id="L35">        log.error(&quot;Saml authentication error&quot;, exception);</span>
+<span class="fc" id="L36">        redirectWithErrorCode(response, failureRedirectUrl, ErrorCode.UNAUTHORISED_PRIVILEGE);</span>
+<span class="fc" id="L37">    }</span>
+
+    public static void redirectWithErrorCode(HttpServletResponse response, String failureRedirectUrl,
+            ErrorCode errorCode) throws IOException {
+<span class="fc" id="L41">        response.sendRedirect(String.format(failureRedirectUrl.concat(ERROR_MESSAGE_PATTERN), errorCode.getCode(),</span>
+<span class="fc" id="L42">                errorCode.getCompareString()));</span>
+<span class="fc" id="L43">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

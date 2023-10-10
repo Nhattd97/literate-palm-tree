@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserServiceSSOImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service</a> &gt; <span class="el_source">UserServiceSSOImpl.java</span></div><h1>UserServiceSSOImpl.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service;
+
+import com.mapview.ms.auth.beans.UserDto;
+import com.mapview.ms.auth.controller.UserRequest;
+import com.mapview.ms.auth.entity.*;
+import com.mapview.ms.auth.exceptions.ErrorCode;
+import com.mapview.ms.auth.exceptions.ExceptionResponse;
+import com.mapview.ms.auth.exceptions.MapviewGlobalException;
+import com.mapview.ms.auth.repository.SSOUserRepository;
+import com.mapview.ms.auth.request.*;
+import com.mapview.ms.auth.request.search.UserSearchCriteria;
+import com.mapview.ms.auth.response.*;
+import com.mapview.ms.auth.service.lnaa.LNAASearchField;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.NotImplementedException;
+import org.hibernate.Session;
+import org.hibernate.query.Query;
+import org.joda.time.DateTime;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.stereotype.Component;
+
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.*;
+import javax.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+<span class="fc" id="L36">@Slf4j</span>
+@Component(&quot;userServiceSSOImpl&quot;)
+<span class="fc" id="L38">public class UserServiceSSOImpl implements UserService {</span>
+    public static final String FIRSTNAME = &quot;firstname&quot;;
+    public static final String LASTNAME = &quot;lastname&quot;;
+    public static final String SSO_ID = &quot;ssoId&quot;;
+    public static final String ID = &quot;id&quot;;
+    public static final String DESC = &quot;DESC&quot;;
+    public static final int DEFAULT_PAGE_SIZE = 10;
+    public static final String USERNAME = &quot;username&quot;;
+    public static final String EMAIL = &quot;email&quot;;
+    @Autowired
+    private SSOUserRepository ssoUserRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Override
+    @Transactional
+    public CreateUserResponse create(UserRequestResponse user) {
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (!user.getSsoUser()) {</span>
+<span class="fc" id="L57">            return generateErrorResponse(ErrorCode.BAD_REQUEST, &quot;Invalid User requested&quot;);</span>
+        }
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (StringUtils.isEmpty(user.getSsoId())) {</span>
+<span class="fc" id="L61">            return generateErrorResponse(ErrorCode.BAD_REQUEST, &quot;SSO ID is required&quot;);</span>
+        }
+
+<span class="fc" id="L64">        SSOUser checkExistUser = ssoUserRepository.findActiveUserBySsoId(user.getSsoId());</span>
+
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (checkExistUser != null) {</span>
+<span class="fc" id="L67">            return generateErrorResponse(ErrorCode.BAD_REQUEST, &quot;Duplicate User detected&quot;);</span>
+        }
+
+<span class="fc" id="L70">        SSOUser ssoUser = new SSOUser();</span>
+<span class="fc" id="L71">        ssoUser.setAccountNumber(user.getAccountDetails().getRequestAccount());</span>
+<span class="fc" id="L72">        ssoUser.setCustomerNumber(user.getAccountDetails().getRequestCust());</span>
+<span class="fc" id="L73">        ssoUser.setBundles(user.getBundles());</span>
+<span class="fc" id="L74">        ssoUser.setDeleted(false);</span>
+<span class="fc" id="L75">        ssoUser.setEmail(user.getEmail());</span>
+<span class="fc" id="L76">        ssoUser.setFirstname(user.getFirstname());</span>
+<span class="fc" id="L77">        ssoUser.setLastname(user.getLastname());</span>
+<span class="fc" id="L78">        ssoUser.setLanguage(user.getLanguage());</span>
+<span class="fc" id="L79">        ssoUser.setUsername(user.getUsername());</span>
+<span class="fc" id="L80">        ssoUser.setSsoId(user.getSsoId());</span>
+
+<span class="fc" id="L82">        SSOUser savedUser = ssoUserRepository.save(ssoUser);</span>
+<span class="fc" id="L83">        CreateUserResponse response = new CreateUserResponse();</span>
+<span class="fc" id="L84">        response.setResult(true);</span>
+<span class="fc" id="L85">        response.setId(savedUser.getId());</span>
+<span class="fc" id="L86">        return response;</span>
+    }
+
+    private CreateUserResponse generateErrorResponse(ErrorCode errorCode, String errorDetails) {
+<span class="fc" id="L90">        ExceptionResponse errorResponse = new ExceptionResponse(</span>
+<span class="fc" id="L91">                DateTime.now().toDate(),</span>
+<span class="fc" id="L92">                errorCode.getCode(),</span>
+<span class="fc" id="L93">                errorCode.getCompareString(),</span>
+<span class="fc" id="L94">                UUID.randomUUID().toString(),</span>
+                errorDetails
+        );
+<span class="fc" id="L97">        CreateUserResponse response = new CreateUserResponse();</span>
+<span class="fc" id="L98">        response.setResult(false);</span>
+<span class="fc" id="L99">        response.setError(errorResponse);</span>
+<span class="fc" id="L100">        return response;</span>
+    }
+
+    @Override
+    public CreateBatchResponse createBatch(UserRequest users) {
+<span class="fc" id="L105">        throw new NotImplementedException(&quot;Function createBatch is not supported&quot;);</span>
+    }
+
+    @Override
+    public void deleteAll() {
+<span class="fc" id="L110">        throw new NotImplementedException(&quot;Function deleteAll is not supported&quot;);</span>
+    }
+
+    @Override
+    public GetUserResponse fetchByUsername(UserDto user) {
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        if (user.getId() == null) {</span>
+<span class="fc" id="L116">            return generateErrorResponse(GetUserResponse.class, ErrorCode.BAD_REQUEST, &quot;User ID must be provided&quot;);</span>
+        }
+<span class="fc" id="L118">        SSOUser ssoUser = ssoUserRepository.findActiveUserById(user.getId());</span>
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (ssoUser == null) {</span>
+<span class="fc" id="L121">            return generateErrorResponse(GetUserResponse.class, ErrorCode.NOT_FOUND, &quot;User ID not found&quot;);</span>
+        }
+
+<span class="fc" id="L124">        UserDetails userDetails = getUserDetails(ssoUser);</span>
+<span class="fc" id="L125">        GetUserResponse response = new GetUserResponse();</span>
+<span class="fc" id="L126">        response.setUserDetails(userDetails);</span>
+
+<span class="fc" id="L128">        return response;</span>
+    }
+
+    private &lt;T extends BaseServiceResponse&gt; T generateErrorResponse(Class&lt;T&gt; className, ErrorCode errorCode, String errorDetails) {
+<span class="fc" id="L132">        ExceptionResponse errorResponse = new ExceptionResponse(</span>
+<span class="fc" id="L133">                DateTime.now().toDate(),</span>
+<span class="fc" id="L134">                errorCode.getCode(),</span>
+<span class="fc" id="L135">                errorCode.getCompareString(),</span>
+<span class="fc" id="L136">                UUID.randomUUID().toString(),</span>
+                errorDetails
+        );
+        try {
+<span class="fc" id="L140">            T response = className.getDeclaredConstructor().newInstance();</span>
+<span class="fc" id="L141">            response.setError(errorResponse);</span>
+<span class="fc" id="L142">            return response;</span>
+<span class="nc" id="L143">        } catch (Exception ex) {</span>
+<span class="nc" id="L144">            log.error(&quot;Unexpected error occurred while returning error&quot;, ex);</span>
+<span class="nc" id="L145">            throw new MapviewGlobalException(&quot;Unexpected error occurred while returning error&quot;, ex);</span>
+        }
+    }
+
+    @Override
+    @Transactional
+    public UpdateUserResponse updateUser(UpdateUserRequest user) {
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        if (user.getId() == null) {</span>
+<span class="fc" id="L153">            return generateErrorResponse(UpdateUserResponse.class, ErrorCode.BAD_REQUEST, &quot;User ID must be provided&quot;);</span>
+        }
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        if (StringUtils.isEmpty(user.getSsoId())) {</span>
+<span class="fc" id="L156">            return generateErrorResponse(UpdateUserResponse.class, ErrorCode.BAD_REQUEST, &quot;SSO ID cannot be empty&quot;);</span>
+        }
+<span class="fc" id="L158">        SSOUser ssoUser = ssoUserRepository.findActiveUserById(user.getId());</span>
+
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        if (ssoUser == null) {</span>
+<span class="fc" id="L161">            return generateErrorResponse(UpdateUserResponse.class, ErrorCode.NOT_FOUND, &quot;User ID not found&quot;);</span>
+        }
+
+<span class="fc" id="L164">        SSOUser checkExistSsoIdUser = ssoUserRepository.findBySsoIdIgnoreCase(user.getSsoId());</span>
+
+<span class="pc bpc" id="L166" title="1 of 4 branches missed.">        if (checkExistSsoIdUser != null &amp;&amp; checkExistSsoIdUser.getId() != ssoUser.getId()) {</span>
+<span class="fc" id="L167">            return generateErrorResponse(UpdateUserResponse.class, ErrorCode.BAD_REQUEST, &quot;Duplicate SSO ID detected&quot;);</span>
+        }
+
+<span class="fc" id="L170">        String accountNumber = user.getAccountDetails().getRequestAccount();</span>
+<span class="fc" id="L171">        String customerNumber = user.getAccountDetails().getRequestCust();</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (!accountNumber.equals(ssoUser.getAccountNumber())) {</span>
+<span class="fc" id="L173">            log.warn(&quot;Trying to remove user of another account detected: {} vs {}&quot;, accountNumber, ssoUser.getAccountNumber());</span>
+<span class="fc" id="L174">            return generateErrorResponse(UpdateUserResponse.class, ErrorCode.NOT_FOUND, &quot;User ID not found&quot;);</span>
+        }
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        if (!customerNumber.equals(ssoUser.getCustomerNumber())) {</span>
+<span class="fc" id="L177">            log.warn(&quot;Trying to remove user of another account detected: {} vs {}&quot;, accountNumber, ssoUser.getAccountNumber());</span>
+<span class="fc" id="L178">            return generateErrorResponse(UpdateUserResponse.class, ErrorCode.NOT_FOUND, &quot;User ID not found&quot;);</span>
+        }
+
+<span class="fc" id="L181">        ssoUser.setSsoId(user.getSsoId());</span>
+<span class="fc" id="L182">        ssoUser.setUsername(user.getUsername());</span>
+<span class="fc" id="L183">        ssoUser.setLanguage(user.getLanguage());</span>
+<span class="fc" id="L184">        ssoUser.setLastname(user.getLastname());</span>
+<span class="fc" id="L185">        ssoUser.setFirstname(user.getFirstname());</span>
+<span class="fc" id="L186">        ssoUser.setEmail(user.getEmail());</span>
+<span class="fc" id="L187">        ssoUser.setBundles(user.getBundles());</span>
+
+<span class="fc" id="L189">        SSOUser savedUser = ssoUserRepository.save(ssoUser);</span>
+<span class="fc" id="L190">        UserDetails userDetails = getUserDetails(savedUser);</span>
+
+<span class="fc" id="L192">        UpdateUserResponse response = new UpdateUserResponse();</span>
+<span class="fc" id="L193">        response.setUserDetails(userDetails);</span>
+<span class="fc" id="L194">        return response;</span>
+    }
+
+    private UserDetails getUserDetails(SSOUser savedUser) {
+<span class="fc" id="L198">        UserDetails userDetails = UserDetails.builder()</span>
+<span class="fc" id="L199">                .user(savedUser.toUserRequestResponse())</span>
+<span class="fc" id="L200">                .accountDetails(UserAccountDetails.builder()</span>
+<span class="fc" id="L201">                        .expireDate(savedUser.getExpireDate())</span>
+<span class="fc" id="L202">                        .lastLogin(null)</span>
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">                        .status(savedUser.isDeleted() ? UserStatus.DISABLED.name() : UserStatus.ENABLED.name())</span>
+<span class="fc" id="L204">                        .locked(false)</span>
+<span class="fc" id="L205">                        .resetRequired(savedUser.getResetRequired())</span>
+<span class="fc" id="L206">                        .isExpired(false)</span>
+<span class="fc" id="L207">                        .build())</span>
+<span class="fc" id="L208">                .build();</span>
+<span class="fc" id="L209">        return userDetails;</span>
+    }
+
+    @Override
+    @Transactional
+    public UpdateUserStatusResponse updateUserStatus(UpdateUserStatusRequest user) {
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        if (user.getId() == null) {</span>
+<span class="fc" id="L216">            return generateErrorResponse(UpdateUserStatusResponse.class, ErrorCode.BAD_REQUEST, &quot;User ID must be provided&quot;);</span>
+        }
+
+<span class="fc" id="L219">        SSOUser ssoUser = ssoUserRepository.findById(user.getId()).orElse(null);</span>
+
+<span class="fc bfc" id="L221" title="All 2 branches covered.">        if (ssoUser == null) {</span>
+<span class="fc" id="L222">            return generateErrorResponse(UpdateUserStatusResponse.class, ErrorCode.NOT_FOUND, &quot;User ID not found&quot;);</span>
+        }
+
+<span class="fc" id="L225">        String accountNumber = user.getAccountDetails().getRequestAccount();</span>
+<span class="fc" id="L226">        String customerNumber = user.getAccountDetails().getRequestCust();</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        if (!accountNumber.equals(ssoUser.getAccountNumber())) {</span>
+<span class="fc" id="L228">            log.warn(&quot;Trying to remove user of another account detected: {} vs {}&quot;, accountNumber, ssoUser.getAccountNumber());</span>
+<span class="fc" id="L229">            return generateErrorResponse(UpdateUserStatusResponse.class, ErrorCode.NOT_FOUND, &quot;User ID not found&quot;);</span>
+        }
+<span class="fc bfc" id="L231" title="All 2 branches covered.">        if (!customerNumber.equals(ssoUser.getCustomerNumber())) {</span>
+<span class="fc" id="L232">            log.warn(&quot;Trying to remove user of another account detected: {} vs {}&quot;, customerNumber, ssoUser.getCustomerNumber());</span>
+<span class="fc" id="L233">            return generateErrorResponse(UpdateUserStatusResponse.class, ErrorCode.NOT_FOUND, &quot;User ID not found&quot;);</span>
+        }
+
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">        ssoUser.setDeleted(UserStatus.ENABLED.equals(user.getStatus()) ? false : true);</span>
+<span class="fc" id="L237">        ssoUserRepository.save(ssoUser);</span>
+
+<span class="fc" id="L239">        UpdateUserStatusResponse response = new UpdateUserStatusResponse();</span>
+<span class="fc" id="L240">        response.setResult(true);</span>
+<span class="fc" id="L241">        return response;</span>
+    }
+
+    @Override
+    public UserSearchResponse search(UserSearchCriteria criteria) {
+<span class="pc bpc" id="L246" title="1 of 4 branches missed.">        if (criteria == null || !criteria.getSsoUser()) {</span>
+<span class="fc" id="L247">            return generateErrorResponse(UserSearchResponse.class, ErrorCode.BAD_REQUEST, &quot;Invalid Request&quot;);</span>
+        }
+
+        try {
+<span class="fc" id="L251">            Session session = entityManager.unwrap(Session.class);</span>
+<span class="fc" id="L252">            CriteriaBuilder builder = session.getCriteriaBuilder();</span>
+<span class="fc" id="L253">            CriteriaQuery&lt;SSOUser&gt; searchQuery = builder.createQuery(SSOUser.class);</span>
+<span class="fc" id="L254">            Root&lt;SSOUser&gt; ssoUserRoot = searchQuery.from(SSOUser.class);</span>
+
+<span class="fc" id="L256">            Predicate[] restrictions = getPredicates(criteria, builder, ssoUserRoot);</span>
+<span class="fc" id="L257">            searchQuery.where(builder.and(restrictions));</span>
+
+<span class="fc bfc" id="L259" title="All 2 branches covered.">            String sortField = StringUtils.isEmpty(criteria.getSortField()) ? ID : criteria.getSortField();</span>
+<span class="fc" id="L260">            Expression&lt;String&gt; sortPath = ssoUserRoot.get(sortField);</span>
+
+<span class="fc bfc" id="L262" title="All 2 branches covered.">            if (DESC.equalsIgnoreCase(criteria.getSortOrder())) {</span>
+<span class="fc" id="L263">                searchQuery.orderBy(builder.desc(sortPath));</span>
+            } else {
+<span class="fc" id="L265">                searchQuery.orderBy(builder.asc(sortPath));</span>
+            }
+
+<span class="fc" id="L268">            int pageNumber = Integer.valueOf(criteria.getPageNumber());</span>
+<span class="fc" id="L269">            Pageable paging = PageRequest.of(pageNumber, DEFAULT_PAGE_SIZE);</span>
+
+<span class="fc" id="L271">            Query&lt;SSOUser&gt; userCriteriaQuery = session.createQuery(searchQuery)</span>
+<span class="fc" id="L272">                    .setFirstResult((int) paging.getOffset())</span>
+<span class="fc" id="L273">                    .setMaxResults(paging.getPageSize());</span>
+
+<span class="fc" id="L275">            List&lt;SSOUser&gt; result = userCriteriaQuery.getResultList();</span>
+
+<span class="fc" id="L277">            long count = queryResultCount(session, builder, restrictions);</span>
+<span class="fc" id="L278">            return generateSearchResponse(paging, (int) count, result);</span>
+<span class="fc" id="L279">        } catch (Exception e) {</span>
+<span class="fc" id="L280">            log.error(e.getMessage(), e);</span>
+<span class="fc" id="L281">            return generateErrorResponse(UserSearchResponse.class, ErrorCode.BAD_REQUEST, e.getMessage());</span>
+        }
+    }
+
+    private long queryResultCount(Session session, CriteriaBuilder builder, Predicate[] restrictions) {
+<span class="fc" id="L286">        CriteriaQuery&lt;Long&gt; userCountQuery = builder.createQuery(Long.class);</span>
+<span class="fc" id="L287">        Root&lt;SSOUser&gt; userCountRoot = userCountQuery.from(SSOUser.class);</span>
+<span class="fc" id="L288">        userCountQuery.select(builder.count(userCountRoot)).where(restrictions);</span>
+
+<span class="fc" id="L290">        long count = session.createQuery(userCountQuery).getSingleResult();</span>
+<span class="fc" id="L291">        return count;</span>
+    }
+
+    private UserSearchResponse generateSearchResponse(Pageable paging, int count, List&lt;SSOUser&gt; searchResult) {
+<span class="fc" id="L295">        UserSearchResponse response = new UserSearchResponse();</span>
+
+<span class="fc" id="L297">        UserSearchPaging resultPaging = new UserSearchPaging(count, (int) paging.getOffset());</span>
+<span class="fc" id="L298">        response.setPaging(resultPaging);</span>
+<span class="fc" id="L299">        response.setResults(searchResult.stream().map(ssoUser -&gt; getUserDetails(ssoUser)</span>
+<span class="fc" id="L300">                ).collect(Collectors.toList()));</span>
+<span class="fc" id="L301">        return response;</span>
+    }
+
+    private Predicate[] getPredicates(UserSearchCriteria criteria, CriteriaBuilder builder, Root&lt;SSOUser&gt; ssoUserRoot) {
+<span class="fc" id="L305">        List&lt;Predicate&gt; conditionList = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L307">        criteria.getSearchFields().stream().forEach(</span>
+            field -&gt; {
+<span class="fc bfc" id="L309" title="All 2 branches covered.">                if (!isFieldNameValid(field.getFieldName())) {</span>
+<span class="fc" id="L310">                    throw new MapviewGlobalException(ErrorCode.BAD_REQUEST, &quot;Invalid field name detected: &quot; + field.getFieldName());</span>
+                }
+
+<span class="fc bfc" id="L313" title="All 2 branches covered.">                if (StringUtils.isEmpty(field.getValue())) { // Skip if UI pass in &quot;empty&quot; value for a field</span>
+<span class="fc" id="L314">                    return;</span>
+                }
+<span class="fc" id="L316">                Expression&lt;String&gt; fieldPath = ssoUserRoot.get(field.getFieldName());</span>
+<span class="fc" id="L317">                Expression&lt;String&gt; fieldPathUpper = builder.upper(fieldPath);</span>
+<span class="fc" id="L318">                String valueUpper = StringUtils.upperCase(field.getValue());</span>
+<span class="fc bfc" id="L319" title="All 2 branches covered.">                String pattern = LNAASearchField.FILTER_TYPE_STARTSWITH.equals(field.getFilterType())</span>
+<span class="fc" id="L320">                        ? String.format(&quot;%s%%&quot;,valueUpper) : String.format(&quot;%%%s%%&quot;, valueUpper);</span>
+<span class="fc" id="L321">                Predicate fieldPredicate = builder.like(fieldPathUpper, pattern);</span>
+<span class="fc" id="L322">                conditionList.add(fieldPredicate);</span>
+<span class="fc" id="L323">            }</span>
+        );
+
+<span class="fc" id="L326">        RequestAccountDetails accountDetails = criteria.getAccountDetails();</span>
+<span class="pc bpc" id="L327" title="1 of 2 branches missed.">        if(accountDetails == null){</span>
+<span class="nc" id="L328">            throw new MapviewGlobalException(ErrorCode.BAD_REQUEST, &quot;No account details detected&quot;);</span>
+        }
+<span class="fc" id="L330">        String customerNumber = accountDetails.getRequestCust();</span>
+<span class="pc bpc" id="L331" title="2 of 4 branches missed.">        if(customerNumber == null || customerNumber.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L332">            throw new MapviewGlobalException(ErrorCode.BAD_REQUEST, &quot;No customer number detected&quot;);</span>
+        }
+<span class="fc" id="L334">        Expression&lt;String&gt; fieldPath = ssoUserRoot.get(&quot;customerNumber&quot;);</span>
+<span class="fc" id="L335">        Expression&lt;String&gt; fieldPathUpper = builder.upper(fieldPath);</span>
+<span class="fc" id="L336">        String valueUpper = StringUtils.upperCase(customerNumber);</span>
+<span class="fc" id="L337">        String pattern = String.format(&quot;%s&quot;, valueUpper);</span>
+<span class="fc" id="L338">        Predicate fieldPredicate = builder.equal(fieldPathUpper, pattern);</span>
+<span class="fc" id="L339">        conditionList.add(fieldPredicate);</span>
+
+<span class="fc" id="L341">        Predicate[] restrictions = conditionList.toArray(new Predicate[conditionList.size()]);</span>
+<span class="fc" id="L342">        return restrictions;</span>
+    }
+
+    private boolean isFieldNameValid(String fieldName) {
+<span class="pc bpc" id="L346" title="1 of 2 branches missed.">        return !StringUtils.isEmpty(fieldName)</span>
+                &amp;&amp;
+<span class="fc bfc" id="L348" title="All 4 branches covered.">                (FIRSTNAME.equals(fieldName) || LASTNAME.equals(fieldName)</span>
+<span class="fc bfc" id="L349" title="All 4 branches covered.">                        || SSO_ID.equals(fieldName) || USERNAME.equals(fieldName)</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">                        || EMAIL.equals(fieldName));</span>
+    }
+
+    @Override
+    public AdminChangeUserPasswordResponse changeUserPassword(AdminChangeUserPasswordRequest request) {
+<span class="fc" id="L355">        throw new NotImplementedException(&quot;Function changeUserPassword is not supported&quot;);</span>
+    }
+
+    @Override
+    public UnlockUserResponse unlockUser(UnlockUserRequest request) {
+<span class="fc" id="L360">        throw new NotImplementedException(&quot;Function unlockUser is not supported&quot;);</span>
+    }
+
+    @Override
+    public ResetPasswordResponse resetPasswordRequest(ResetPasswordRequest request) {
+<span class="fc" id="L365">        throw new NotImplementedException(&quot;Function resetPasswordRequest is not supported&quot;);</span>
+    }
+
+    @Override
+    public ChangePasswordResponse changePassword(String username, ChangePasswordRequest request) {
+<span class="fc" id="L370">        throw new NotImplementedException(&quot;Function changePassword is not supported&quot;);</span>
+    }
+
+    @Override
+    public OAuth2AccessToken selectRole(OAuth2Authentication authentication, RequestSelectRole request) {
+<span class="fc" id="L375">        throw new NotImplementedException(&quot;Function selectRole is not supported&quot;);</span>
+    }
+
+    @Override
+    public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        try {
+<span class="fc" id="L381">            return ssoUserRepository.findActiveUserByUsername(username);</span>
+<span class="nc" id="L382">        } catch (Exception e) {</span>
+<span class="nc" id="L383">            log.error(&quot;Error loadUserByUsername with exception&quot;, e);</span>
+        }
+<span class="nc" id="L385">        return null;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

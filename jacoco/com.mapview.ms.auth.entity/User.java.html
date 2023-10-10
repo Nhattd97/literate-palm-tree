@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>User.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.entity</a> &gt; <span class="el_source">User.java</span></div><h1>User.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.entity;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import com.mapview.ms.auth.beans.UserDto;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import com.mapview.ms.auth.converter.ListConverter;
+import com.mapview.ms.auth.request.RequestObject;
+
+
+
+
+/**
+ * Entity with User information.
+ *
+ */
+
+@Entity
+@Table(name=&quot;Users&quot;)
+public class User extends RequestObject&lt;User&gt; implements UserDetails, MapviewUser {
+
+    private static final long serialVersionUID = -6967688501548567259L;
+    
+    @Id
+    private String username;
+	private String password;
+	private String customerNumber;
+	private String accountNumber;
+<span class="fc" id="L38">	@Column(name = &quot;bundles&quot;)</span>
+	@Convert(converter = ListConverter.class)
+	private List&lt;String&gt; bundles = new ArrayList&lt;&gt;();
+	
+	private String firstname;
+	private String lastname;
+	private String email;
+	private String language;
+	private String wrongLoginAttempts;
+	private String expireDate;
+	private String resetRequired;
+	
+<span class="fc" id="L50">	public User() {}</span>
+    
+<span class="fc" id="L52">    public User(final String username, final String password, final String customerNumber, final String accountNumber, final List&lt;String&gt; bundles) {</span>
+<span class="fc" id="L53">        this.username = username;</span>
+<span class="fc" id="L54">        this.password = password;</span>
+<span class="fc" id="L55">        this.customerNumber = customerNumber;</span>
+<span class="fc" id="L56">        this.accountNumber = accountNumber;</span>
+<span class="fc" id="L57">        this.bundles = bundles;</span>
+<span class="fc" id="L58">    }</span>
+<span class="fc" id="L59">    public User(final String username, final String password, final String customerNumber, final String accountNumber, final List&lt;String&gt; bundles, String language) {</span>
+<span class="fc" id="L60">        this.username = username;</span>
+<span class="fc" id="L61">        this.password = password;</span>
+<span class="fc" id="L62">        this.customerNumber = customerNumber;</span>
+<span class="fc" id="L63">        this.accountNumber = accountNumber;</span>
+<span class="fc" id="L64">        this.bundles = bundles;</span>
+<span class="fc" id="L65">        this.language = language;</span>
+<span class="fc" id="L66">    }</span>
+
+	@Override
+	public String getPassword() {
+<span class="fc" id="L70">		return password;</span>
+	}
+
+	@Override
+	public String getUsername() {
+<span class="fc" id="L75">		return username;</span>
+	}
+
+	/**
+	 * MVG uses bundles/privileges instead of spring security authorities/roles
+	 */
+	@Override
+	public List&lt;GrantedAuthority&gt; getAuthorities() {
+<span class="fc" id="L83">        return new ArrayList&lt;&gt;();</span>
+	}
+
+	public void setUsername(final String username) {
+<span class="fc" id="L87">		this.username = username;</span>
+<span class="fc" id="L88">	}</span>
+
+	public void setPassword(final String password) {
+<span class="fc" id="L91">		this.password = password;</span>
+<span class="fc" id="L92">	}</span>
+
+	@Override
+	public boolean isAccountNonExpired() {
+<span class="fc" id="L96">		return true;</span>
+	}
+
+	@Override
+	public boolean isAccountNonLocked() {
+<span class="fc" id="L101">		return true;</span>
+	}
+
+	@Override
+	public boolean isCredentialsNonExpired() {
+<span class="fc" id="L106">		return true;</span>
+	}
+
+	@Override
+	public boolean isEnabled() {
+<span class="fc" id="L111">		return true;</span>
+	}
+	
+   public String getCustomerNumber() {
+<span class="fc" id="L115">       return customerNumber;</span>
+   }
+
+   public void setCustomerNumber(final String customerNumber) {
+<span class="fc" id="L119">       this.customerNumber = customerNumber;</span>
+<span class="fc" id="L120">   }</span>
+
+	public String getAccountNumber() {
+<span class="fc" id="L123">		return accountNumber;</span>
+	}
+	
+	public void setAccountNumber(final String accountNumber) {
+<span class="fc" id="L127">		this.accountNumber = accountNumber;</span>
+<span class="fc" id="L128">	}</span>
+
+	public List&lt;String&gt; getBundles() {
+<span class="fc" id="L131">		return bundles;</span>
+	}
+
+	public void setBundles(final List&lt;String&gt; bundles) {
+<span class="fc" id="L135">		this.bundles = bundles;</span>
+<span class="fc" id="L136">	}</span>
+
+    public String getFirstname() {
+<span class="fc" id="L139">        return firstname;</span>
+    }
+
+    public void setFirstname(String firstname) {
+<span class="fc" id="L143">        this.firstname = firstname;</span>
+<span class="fc" id="L144">    }</span>
+
+    public String getLastname() {
+<span class="fc" id="L147">        return lastname;</span>
+    }
+
+    public void setLastname(String lastname) {
+<span class="fc" id="L151">        this.lastname = lastname;</span>
+<span class="fc" id="L152">    }</span>
+
+    public String getEmail() {
+<span class="fc" id="L155">        return email;</span>
+    }
+
+    public void setEmail(String email) {
+<span class="fc" id="L159">        this.email = email;</span>
+<span class="fc" id="L160">    }</span>
+
+    public String getLanguage() {
+<span class="fc" id="L163">        return language;</span>
+    }
+
+    public void setLanguage(String language) {
+<span class="fc" id="L167">        this.language = language;</span>
+<span class="fc" id="L168">    }</span>
+
+    public String getWrongLoginAttempts() {
+<span class="fc" id="L171">        return wrongLoginAttempts;</span>
+    }
+
+    public void setWrongLoginAttempts(String wrongLoginAttempts) {
+<span class="fc" id="L175">        this.wrongLoginAttempts = wrongLoginAttempts;</span>
+<span class="fc" id="L176">    }</span>
+
+    public String getExpireDate() {
+<span class="fc" id="L179">        return expireDate;</span>
+    }
+
+    public void setExpireDate(String expireDate) {
+<span class="fc" id="L183">        this.expireDate = expireDate;</span>
+<span class="fc" id="L184">    }</span>
+
+    public String getResetRequired() {
+<span class="fc" id="L187">        return resetRequired;</span>
+    }
+
+    public void setResetRequired(String resetRequired) {
+<span class="fc" id="L191">        this.resetRequired = resetRequired;</span>
+<span class="fc" id="L192">    }</span>
+
+    public UserDto toUserDto() {
+<span class="fc" id="L195">	    UserDto userDto = new UserDto();</span>
+<span class="fc" id="L196">	    userDto.setAccountNumber(this.accountNumber);</span>
+<span class="fc" id="L197">	    userDto.setBundles(this.bundles);</span>
+<span class="fc" id="L198">	    userDto.setCustomerNumber(this.customerNumber);</span>
+<span class="fc" id="L199">	    userDto.setEmail(this.email);</span>
+<span class="fc" id="L200">	    userDto.setExpireDate(this.expireDate);</span>
+<span class="fc" id="L201">	    userDto.setFirstname(this.firstname);</span>
+<span class="fc" id="L202">	    userDto.setLastname(this.lastname);</span>
+<span class="fc" id="L203">	    userDto.setLanguage(this.language);</span>
+<span class="fc" id="L204">	    userDto.setPassword(this.password);</span>
+<span class="fc" id="L205">	    userDto.setResetRequired(this.resetRequired);</span>
+<span class="fc" id="L206">	    userDto.setUsername(this.username);</span>
+<span class="fc" id="L207">	    userDto.setWrongLoginAttempts(this.wrongLoginAttempts);</span>
+<span class="fc" id="L208">	    userDto.setAccountDetails(this.getAccountDetails());</span>
+<span class="fc" id="L209">	    return userDto;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

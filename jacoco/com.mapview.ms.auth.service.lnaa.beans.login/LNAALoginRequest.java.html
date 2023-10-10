@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAALoginRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans.login</a> &gt; <span class="el_source">LNAALoginRequest.java</span></div><h1>LNAALoginRequest.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans.login;
+
+import java.util.Objects;
+
+import com.mapview.ms.auth.beans.LNAAEncode;
+import com.mapview.ms.auth.entity.User;
+import com.mapview.ms.auth.service.lnaa.LNAAException;
+import com.mapview.ms.auth.service.lnaa.LNAASettings;
+import com.mapview.ms.auth.service.lnaa.beans.LNAARequestSession;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAServiceRequest;
+import org.apache.commons.lang3.StringUtils;
+
+public class LNAALoginRequest extends LNAAServiceRequest&lt;User&gt; {
+
+    private String domain;
+    private String login_id;
+    private String password;
+<span class="fc" id="L18">    private String group_code = &quot;MBS&quot;;</span>
+<span class="fc" id="L19">    private String create_session = &quot;1&quot;;</span>
+<span class="fc" id="L20">    private String return_user_data = &quot;1&quot;;</span>
+    
+<span class="fc" id="L22">    public LNAALoginRequest()	{</span>
+    	
+<span class="fc" id="L24">    }</span>
+    
+	@Override
+	public void validateRequest(User request) throws LNAAException {
+<span class="pc bpc" id="L28" title="1 of 4 branches missed.">      if (request != null &amp;&amp; StringUtils.isEmpty(request.getPassword()))    {</span>
+<span class="nc" id="L29">	      throw new LNAAException(&quot;admin user password has not be set&quot;);</span>
+	  }
+<span class="fc" id="L31">	}</span>
+
+    @Override
+	public LNAAServiceRequest&lt;User&gt; init(LNAASettings lnaaSettings, User user, LNAARequestSession session)	{
+<span class="fc bfc" id="L35" title="All 2 branches covered.">		if (user == null)	{</span>
+<span class="fc" id="L36">	        setLogin_id(lnaaSettings.getLogin_id());</span>
+<span class="fc" id="L37">	        setPassword(lnaaSettings.getPassword());</span>
+<span class="fc" id="L38">	        setDomain(lnaaSettings.getDomain());</span>
+<span class="fc" id="L39">	        return this; </span>
+        }
+<span class="fc" id="L41">        setLogin_id(user.getUsername());</span>
+<span class="fc" id="L42">        setPassword(user.getPassword());</span>
+<span class="fc" id="L43">        setDomain(lnaaSettings.getUser_domain());</span>
+<span class="fc" id="L44">        setGroup_code(lnaaSettings.getUser_domain());</span>
+        
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (StringUtils.endsWithIgnoreCase(user.getUsername(), LNAAEncode.AT_EU.getEncode())) {</span>
+<span class="fc" id="L47">            setLogin_id(StringUtils.removeEndIgnoreCase(user.getUsername(), LNAAEncode.AT_EU.getEncode()));</span>
+<span class="fc" id="L48">            setDomain(lnaaSettings.getInternalUserDomain());</span>
+        }
+        
+<span class="fc" id="L51">        return this;</span>
+	}
+
+    public String getDomain() {
+<span class="fc" id="L55">        return domain;</span>
+    }
+    
+    public void setDomain(String domain) {
+<span class="fc" id="L59">        this.domain = domain;</span>
+<span class="fc" id="L60">    }</span>
+    
+    public String getLogin_id() {
+<span class="fc" id="L63">        return login_id;</span>
+    }
+    
+    public void setLogin_id(String login_id) {
+<span class="fc" id="L67">        this.login_id = login_id;</span>
+<span class="fc" id="L68">    }</span>
+    
+    public String getPassword() {
+<span class="fc" id="L71">        return password;</span>
+    }
+    
+    public void setPassword(String password) {
+<span class="fc" id="L75">        this.password = password;</span>
+<span class="fc" id="L76">    }</span>
+    
+    public String getGroup_code() {
+<span class="fc" id="L79">        return group_code;</span>
+    }
+    
+    public void setGroup_code(String group_code) {
+<span class="fc" id="L83">        this.group_code = group_code;</span>
+<span class="fc" id="L84">    }</span>
+    
+    public String getCreate_session() {
+<span class="fc" id="L87">        return create_session;</span>
+    }
+    
+    public void setCreate_session(String create_session) {
+<span class="fc" id="L91">        this.create_session = create_session;</span>
+<span class="fc" id="L92">    }</span>
+    
+    public String getReturn_user_data() {
+<span class="fc" id="L95">        return return_user_data;</span>
+    }
+
+    public void setReturn_user_data(String return_user_data) {
+<span class="fc" id="L99">        this.return_user_data = return_user_data;</span>
+<span class="fc" id="L100">    }</span>
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L104">        return Objects.hash(domain, login_id, password, group_code, create_session, return_user_data);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L109" title="All 2 branches covered.">      if (this == o) {</span>
+<span class="fc" id="L110">        return true;</span>
+      }
+<span class="fc bfc" id="L112" title="All 4 branches covered.">      if (o == null || getClass() != o.getClass()) {</span>
+<span class="fc" id="L113">        return false;</span>
+      }
+<span class="fc" id="L115">      LNAALoginRequest comp = (LNAALoginRequest) o;</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">      return Objects.equals(this.domain, comp.domain)</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.login_id, comp.login_id)</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.group_code, comp.group_code)</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.create_session, comp.create_session)</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.return_user_data, comp.return_user_data)</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.password, comp.password);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L126">      StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L127">      sb.append(&quot;class LNAALoginRequest {\n&quot;);      </span>
+<span class="fc" id="L128">      sb.append(&quot;    &quot;).append(toIndentedString(super.toString())).append(&quot;\n&quot;);</span>
+<span class="fc" id="L129">      sb.append(&quot;    domain: &quot;).append(toIndentedString(domain)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L130">      sb.append(&quot;    login_id: &quot;).append(toIndentedString(login_id)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L131">      sb.append(&quot;    group_code: &quot;).append(toIndentedString(group_code)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L132">      sb.append(&quot;    create_session: &quot;).append(toIndentedString(create_session)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L133">      sb.append(&quot;    return_user_data: &quot;).append(toIndentedString(return_user_data)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L134">      sb.append(&quot;}&quot;);</span>
+<span class="fc" id="L135">      return sb.toString();</span>
+    }
+
+    /**
+     * Convert the given object to string with each line indented by 4 spaces
+     * (except the first line).
+     */
+    private String toIndentedString(Object o) {
+<span class="fc bfc" id="L143" title="All 2 branches covered.">      if (o == null) {</span>
+<span class="fc" id="L144">        return &quot;null&quot;;</span>
+      }
+<span class="fc" id="L146">      return o.toString().replace(&quot;\n&quot;, &quot;\n    &quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

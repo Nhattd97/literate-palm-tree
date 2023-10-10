@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CapchaFilterChain.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.security</a> &gt; <span class="el_source">CapchaFilterChain.java</span></div><h1>CapchaFilterChain.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.security;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Date;
+import java.util.UUID;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.GenericFilterBean;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mapview.ms.auth.config.CaptchaSettings;
+import com.mapview.ms.auth.exceptions.ErrorCode;
+import com.mapview.ms.auth.exceptions.ExceptionResponse;
+import com.mapview.ms.auth.service.CaptchaService;
+
+@Component
+@ConditionalOnProperty(prefix = &quot;mvg&quot;, name = &quot;google.captcha.enable&quot;, havingValue = &quot;true&quot;, matchIfMissing = false)
+<span class="fc" id="L31">public class CapchaFilterChain extends GenericFilterBean {</span>
+
+<span class="fc" id="L33">	private static final Logger logger = LoggerFactory.getLogger(CapchaFilterChain.class);</span>
+
+	private static final String OAUTH_TOKEN_PATH = &quot;/oauth/token&quot;;
+	
+	private static final String RESET_PASSWORD_PATH = &quot;/auth/user/password/reset/request&quot;;
+
+	@Autowired
+	CaptchaService captchaService;
+
+	@Autowired
+	CaptchaSettings captchaSettings;
+
+	@Override
+	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+	        throws IOException, ServletException {
+<span class="fc" id="L48">		HttpServletResponse response = (HttpServletResponse) res;</span>
+<span class="fc" id="L49">		HttpServletRequest request = (HttpServletRequest) req;</span>
+<span class="fc" id="L50">		String token = request.getParameter(&quot;token&quot;);</span>
+<span class="fc" id="L51">		String grantType = request.getParameter(&quot;grant_type&quot;);</span>
+<span class="fc" id="L52">		String uri = request.getRequestURI();</span>
+		
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">		 if (req.isSecure())</span>
+<span class="nc" id="L55">			 response.setHeader(&quot;Strict-Transport-Security&quot;, &quot;max-age=31622400; includeSubDomains&quot;);</span>
+		
+<span class="fc" id="L57">		logger.info(&quot;filter captcha with uri: {} token: {} and grant_type: {}&quot;, uri, token, grantType);</span>
+
+<span class="fc" id="L59">		boolean isValid = isValidCaptcha(uri, grantType, token);</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">		if (isValid) {</span>
+<span class="fc" id="L61">			chain.doFilter(request, response);</span>
+		} else {
+<span class="fc" id="L63">			proccessError(response);</span>
+		}
+<span class="fc" id="L65">	}</span>
+
+	public boolean isValidCaptcha(String uri, String grantType, String token) {
+<span class="fc" id="L68">		boolean passed = true;</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">		if(uri.contains(OAUTH_TOKEN_PATH)) {</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">			if(grantType.equals(&quot;password&quot;)) {</span>
+<span class="fc" id="L71">				passed = captchaService.processResponse(token);</span>
+			}
+<span class="fc bfc" id="L73" title="All 2 branches covered.">		} else if(uri.contains(RESET_PASSWORD_PATH)) {</span>
+<span class="fc" id="L74">			passed = captchaService.processResponse(token);</span>
+		}
+<span class="fc" id="L76">		return passed;</span>
+	}
+
+	public PrintWriter proccessError(HttpServletResponse response) throws IOException {
+<span class="fc" id="L80">		response.setStatus(HttpStatus.BAD_REQUEST.value());</span>
+<span class="fc" id="L81">		response.setContentType(&quot;application/json&quot;);				</span>
+<span class="fc" id="L82">		ExceptionResponse body = getException();</span>
+<span class="fc" id="L83">		ObjectMapper mapper = new ObjectMapper();</span>
+<span class="fc" id="L84">		PrintWriter out = response.getWriter();</span>
+<span class="fc" id="L85">		out.print(mapper.writeValueAsString(body));</span>
+<span class="fc" id="L86">		out.flush();</span>
+<span class="fc" id="L87">		return out;</span>
+	}
+
+	public ExceptionResponse getException() {
+<span class="fc" id="L91">		ExceptionResponse body = new ExceptionResponse(new Date(), ErrorCode.CAPTCHA_VALIDATION_ERROR.getCode(),</span>
+<span class="fc" id="L92">		        ErrorCode.CAPTCHA_VALIDATION_ERROR.getCompareString(), UUID.randomUUID().toString());</span>
+<span class="fc" id="L93">		return body;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

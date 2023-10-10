@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XSSFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.security</a> &gt; <span class="el_source">XSSFilter.java</span></div><h1>XSSFilter.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.security;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.UUID;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mapview.ms.auth.exceptions.ErrorCode;
+import com.mapview.ms.auth.exceptions.ExceptionResponse;
+import com.mapview.ms.auth.utils.XSSUtils;
+
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+<span class="fc" id="L33">public class XSSFilter implements Filter {</span>
+<span class="fc" id="L34">    private static final Logger logger = LoggerFactory.getLogger(XSSFilter.class);</span>
+
+    @Override
+    public void init(FilterConfig filterConfig) {
+
+<span class="nc" id="L39">    }</span>
+
+    @Override
+    public void destroy() {
+<span class="nc" id="L43">    }</span>
+
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+            throws IOException, ServletException {
+<span class="fc" id="L48">        HttpServletResponse response = (HttpServletResponse) res;</span>
+<span class="fc" id="L49">        HttpServletRequest request = (HttpServletRequest) req;</span>
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (isValidRequest(request, response)) {</span>
+<span class="fc" id="L52">            chain.doFilter(request, response);</span>
+        } else {
+<span class="fc" id="L54">            proccessError(response);</span>
+        }
+<span class="fc" id="L56">    }</span>
+
+    private boolean isValidRequest(HttpServletRequest req, HttpServletResponse response) {
+<span class="fc" id="L59">        Enumeration&lt;String&gt; params = req.getParameterNames();</span>
+<span class="fc" id="L60">        return validate(params, req);</span>
+    }
+
+    private boolean validate(Enumeration&lt;String&gt; data, HttpServletRequest req) {
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        if (data == null)</span>
+<span class="nc" id="L65">            return true;</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        while (data.hasMoreElements()) {</span>
+<span class="fc" id="L67">            String val = data.nextElement();</span>
+<span class="fc" id="L68">            String[] values = req.getParameterValues(val);</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">            if (!XSSUtils.validCleanString(values)) {</span>
+<span class="fc" id="L70">                return false;</span>
+            }
+<span class="fc" id="L72">        }</span>
+<span class="fc" id="L73">        return true;</span>
+    }
+
+    private PrintWriter proccessError(HttpServletResponse response) throws IOException {
+<span class="fc" id="L77">        response.setStatus(HttpStatus.BAD_REQUEST.value());</span>
+<span class="fc" id="L78">        response.setContentType(&quot;application/json&quot;);</span>
+<span class="fc" id="L79">        ExceptionResponse body = getException();</span>
+<span class="fc" id="L80">        ObjectMapper mapper = new ObjectMapper();</span>
+<span class="fc" id="L81">        PrintWriter out = response.getWriter();</span>
+<span class="fc" id="L82">        out.print(mapper.writeValueAsString(body));</span>
+<span class="fc" id="L83">        out.flush();</span>
+<span class="fc" id="L84">        return out;</span>
+    }
+
+    private ExceptionResponse getException() {
+<span class="fc" id="L88">        ExceptionResponse body = new ExceptionResponse(new Date(), ErrorCode.BAD_REQUEST.getCode(),</span>
+<span class="fc" id="L89">                ErrorCode.BAD_REQUEST.getCompareString(), UUID.randomUUID().toString());</span>
+<span class="fc" id="L90">        return body;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

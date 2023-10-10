@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IpFilteringService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service</a> &gt; <span class="el_source">IpFilteringService.java</span></div><h1>IpFilteringService.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service;
+
+import java.util.List;
+
+import org.apache.commons.validator.routines.InetAddressValidator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.security.web.util.matcher.IpAddressMatcher;
+import org.springframework.stereotype.Service;
+
+import com.mapview.ms.auth.entity.CustomerIpAddress;
+
+@Service
+@ConditionalOnProperty(prefix = &quot;mvg&quot;, name = &quot;security.ip.filter.enable&quot;, havingValue = &quot;true&quot;, matchIfMissing = false)
+<span class="fc" id="L15">public class IpFilteringService {</span>
+
+	@Autowired
+	private CustomerIpAddressService customerIpAddressService;
+
+	public boolean validateIpAddress(String username, String ip) {
+	
+		try {
+<span class="fc" id="L23">			InetAddressValidator validator = InetAddressValidator.getInstance();			</span>
+<span class="fc" id="L24">			List&lt;CustomerIpAddress&gt; list = customerIpAddressService.getCustomerIpAddressByUsername(username);</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">			if (list.isEmpty()) {</span>
+<span class="fc" id="L26">				return true;</span>
+			}			
+<span class="fc bfc" id="L28" title="All 2 branches covered.">			else if (!validator.isValidInet4Address(ip)) {</span>
+<span class="fc" id="L29">				return false;</span>
+			}
+			else {
+<span class="fc" id="L32">				return validateIpRange(list, ip);</span>
+			}
+<span class="nc" id="L34">		} catch (Exception ex) {</span>
+<span class="nc" id="L35">			return false;</span>
+		}
+	}
+	boolean validateIpRange(List&lt;CustomerIpAddress&gt; list, String ip) {
+<span class="fc" id="L39">		return list.stream().anyMatch(config -&gt; isIpInRange(config, ip));</span>
+	}
+
+	private boolean isIpInRange(CustomerIpAddress address, String ip) {
+<span class="fc" id="L43">	    IpAddressMatcher matcher = new IpAddressMatcher(address.getSubnet());</span>
+<span class="fc" id="L44">        return matcher.matches(ip);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

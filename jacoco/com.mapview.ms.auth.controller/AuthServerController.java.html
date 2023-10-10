@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthServerController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.controller</a> &gt; <span class="el_source">AuthServerController.java</span></div><h1>AuthServerController.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.controller;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import javax.servlet.ServletContext;
+import javax.validation.Valid;
+
+import com.mapview.ms.auth.beans.UserDto;
+import com.mapview.ms.auth.request.RequestSelectRole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.endpoint.TokenEndpoint;
+import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.mapview.ms.auth.beans.GrantType;
+import com.mapview.ms.auth.entity.UserRequestResponse;
+import com.mapview.ms.auth.entity.UserSearchResponse;
+import com.mapview.ms.auth.exceptions.ErrorCode;
+import com.mapview.ms.auth.exceptions.ExceptionResponse;
+import com.mapview.ms.auth.request.AdminChangeUserPasswordRequest;
+import com.mapview.ms.auth.request.ChangePasswordRequest;
+import com.mapview.ms.auth.request.RequestCustomerIpConfig;
+import com.mapview.ms.auth.request.ResetPasswordRequest;
+import com.mapview.ms.auth.request.UnlockUserRequest;
+import com.mapview.ms.auth.request.UpdateCustomerIpRequest;
+import com.mapview.ms.auth.request.UpdateUserRequest;
+import com.mapview.ms.auth.request.UpdateUserStatusRequest;
+import com.mapview.ms.auth.request.search.UserSearchCriteria;
+import com.mapview.ms.auth.response.AdminChangeUserPasswordResponse;
+import com.mapview.ms.auth.response.ChangePasswordResponse;
+import com.mapview.ms.auth.response.CreateBatchResponse;
+import com.mapview.ms.auth.response.CreateUserResponse;
+import com.mapview.ms.auth.response.CustomerIpAddressResponse;
+import com.mapview.ms.auth.response.GetUserResponse;
+import com.mapview.ms.auth.response.ResetPasswordResponse;
+import com.mapview.ms.auth.response.UnlockUserResponse;
+import com.mapview.ms.auth.response.UpdateUserResponse;
+import com.mapview.ms.auth.response.UpdateUserStatusResponse;
+import com.mapview.ms.auth.service.AuthenticationLoggingService;
+import com.mapview.ms.auth.service.CustomerIpAddressService;
+import com.mapview.ms.auth.service.OauthClientDetailsService;
+import com.mapview.ms.auth.service.UserService;
+import com.mapview.ms.logging.entity.TransactionAction;
+
+/**
+ * Auth Server Controller class
+ *
+ */
+
+@RestController
+@RequestMapping(value = &quot;/auth&quot;)
+<span class="fc" id="L66">public class AuthServerController {</span>
+<span class="fc" id="L67">	private final Logger log = LoggerFactory.getLogger(AuthServerController.class);</span>
+	
+	@Autowired
+	@Qualifier(&quot;userAdapterService&quot;)
+	UserService userService;
+
+	@Autowired
+	OauthClientDetailsService oauthClientDetailsService;
+	
+	@Autowired
+	AuthenticationLoggingService authenticationLoggingService;
+	
+	@Autowired
+	CustomerIpAddressService customerIpAddressService;
+
+	@Autowired
+	private ServletContext context;
+
+	/**
+	 * Method to create a user.
+	 * 
+	 * @param authentication Should be a user with 'auth-server' scope.
+	 * @param request UserRequestResponse object containing details of user to be created
+	 * @return ResponseEntity empty string when successful, otherwise a json error string
+	 * @throws Exception 
+	 */
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server')&quot;)
+	@RequestMapping(value = &quot;/user/create&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;CreateUserResponse&gt; create(OAuth2Authentication authentication, @RequestBody @Valid UserRequestResponse request) throws Exception {
+<span class="fc" id="L96">		String username = authentication.getPrincipal() + &quot;&quot;;</span>
+<span class="fc" id="L97">		log.info(&quot;User {} request to create user&quot;, username);</span>
+<span class="fc" id="L98">		CreateUserResponse response = userService.create(request);</span>
+<span class="fc" id="L99">		return ResponseEntity.ok().body(response);</span>
+
+	}
+
+	/**
+	 * This method is legacy for creating a batch of test users in a list and will be phased out when
+	 * the system is finally switched to LNAA. This method was the same as the 'create' method but
+	 * was renamed as the create method now only accepts one user at a time. 
+	 */
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server')&quot;)
+	@RequestMapping(value = &quot;/user/createbatch&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;CreateBatchResponse&gt; createBatch(OAuth2Authentication authentication, @RequestBody @Valid UserRequest request) {		
+<span class="fc" id="L111">		Assert.isTrue(validateGrantType(request.getGrantType()), &quot;Invalid request: &quot; + request.getGrantType());</span>
+
+<span class="fc bfc" id="L113" title="All 2 branches covered.">		if (request.getGrantType().equals(GrantType.PASSWORD.getName())) {</span>
+<span class="fc" id="L114">			CreateBatchResponse batchResponse = userService.createBatch(request);</span>
+<span class="fc" id="L115">			return ResponseEntity.ok().body(batchResponse);</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">		} else if (request.getGrantType().equals(GrantType.CLIENT_CREDENTIALS.getName())) {</span>
+<span class="fc" id="L117">			oauthClientDetailsService.createClients(request.getOauthClientDetails());</span>
+<span class="fc" id="L118">			CreateBatchResponse clientResponse = new CreateBatchResponse(true);</span>
+<span class="fc" id="L119">			return ResponseEntity.ok().body(clientResponse);</span>
+		} else {
+<span class="nc" id="L121">			CreateBatchResponse clientResponse = new CreateBatchResponse(false);</span>
+<span class="nc" id="L122">			clientResponse.setError(new ExceptionResponse(new Date(), ErrorCode.BAD_REQUEST.getCode(), ErrorCode.BAD_REQUEST.getCompareString(), UUID.randomUUID().toString()));</span>
+<span class="nc" id="L123">			return ResponseEntity.ok().body(clientResponse);</span>
+		}
+	}
+
+	/**
+	 * Method to fetch a user.
+	 * 
+	 * @param authentication Should be a user with 'auth-server' scope.
+	 * @param request User object containing the username of the user to be retrieved
+	 * @return ResponseEntity UserDetails object containing details of the user
+	 * @throws Exception 
+	 */
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server')&quot;)
+	@RequestMapping(value = &quot;/user/get&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;GetUserResponse&gt; fetchUser(OAuth2Authentication authentication, @RequestBody @Valid UserDto user) throws Exception {
+<span class="fc" id="L138">		String username = authentication.getPrincipal() + &quot;&quot;;</span>
+<span class="fc" id="L139">		log.info(&quot;User {} request to get  user : {}&quot;, username,  user);</span>
+<span class="fc" id="L140">		GetUserResponse response = userService.fetchByUsername(user);</span>
+<span class="fc" id="L141">		return ResponseEntity.ok().body(response);			</span>
+		
+	}
+
+	/**
+	 * Method to update a user.
+	 * 
+	 * @param authentication Should be a user with 'auth-server' scope.
+	 * @param request UpdateUserRequest object containing details of the user to be updated
+	 * @return ResponseEntity UserDetails object containing details of the user
+	 * @throws Exception 
+	 */
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server')&quot;)
+	@RequestMapping(value = &quot;/user/update&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;UpdateUserResponse&gt; updateUser(OAuth2Authentication authentication,
+			@RequestBody @Valid UpdateUserRequest request) throws Exception {
+<span class="fc" id="L157">		String username = authentication.getPrincipal() + &quot;&quot;;</span>
+<span class="fc" id="L158">		log.info(&quot;User {} request to update  user : {}&quot;, username,request);</span>
+<span class="fc" id="L159">		UpdateUserResponse response = userService.updateUser(request);</span>
+<span class="fc" id="L160">		return ResponseEntity.ok().body(response);</span>
+	}
+	
+	/**
+	 * Method to update the status of a user.
+	 * 
+	 * @param authentication Should be a user with 'auth-server' scope.
+	 * @param request UpdateUserStatusRequest object containing UserStatus enum value to be set
+	 * @return UpdateUserStatusResponse empty when successful
+	 * @throws Exception 
+	 */
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server')&quot;)
+    @RequestMapping(value = &quot;/user/status/update&quot;, method = RequestMethod.POST)
+    public ResponseEntity&lt;UpdateUserStatusResponse&gt; updateUserStatus(OAuth2Authentication authentication,
+            @RequestBody @Valid UpdateUserStatusRequest user) throws Exception {
+<span class="fc" id="L175">		String username = authentication.getPrincipal() + &quot;&quot;;</span>
+<span class="fc" id="L176">        log.info(&quot;User {} request to update user status : {}&quot;, username, user);      </span>
+<span class="fc" id="L177">        UpdateUserStatusResponse response = userService.updateUserStatus(user);</span>
+<span class="fc" id="L178">        return ResponseEntity.ok().body(response);</span>
+
+	}
+	
+	/**
+	 * Method to change a user password.
+	 * 
+	 * @param authentication Should be a user with 'auth-server' scope.
+	 * @param request AdminChangeUserPasswordRequest object username and password to be set
+	 * @return AdminChangeUserPasswordResponse empty when successful
+	 * @throws Exception 
+	 */
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server')&quot;)
+    @RequestMapping(value = &quot;/user/password/change&quot;, method = RequestMethod.POST)
+    public ResponseEntity&lt;AdminChangeUserPasswordResponse&gt; changeUserPassword(OAuth2Authentication authentication,
+            @RequestBody @Valid AdminChangeUserPasswordRequest request) throws Exception {
+<span class="fc" id="L194">	   String username = authentication.getPrincipal() + &quot;&quot;;</span>
+       
+<span class="fc" id="L196">       log.info(&quot;User {} request to change user password:{}&quot;, username, request.getUsername());</span>
+<span class="fc" id="L197">       AdminChangeUserPasswordResponse response = userService.changeUserPassword(request); </span>
+<span class="fc" id="L198">       return ResponseEntity.ok().body(response);</span>
+    }
+
+	/**
+	 * Method to search for users
+	 * 
+	 * @param authentication Should be a user with 'auth-server' scope.
+	 * @param request UserSearchCriteria object containing a list of criteria to be search for
+	 * and paging information
+	 * @return UserSearchResponse A list of users retrieved in the search
+	 * @throws Exception 
+	 */
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server')&quot;)
+	@RequestMapping(value = &quot;/user/search&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;UserSearchResponse&gt; search(OAuth2Authentication authentication,
+			@RequestBody @Valid UserSearchCriteria criteria) throws Exception {
+<span class="fc" id="L214">		String username = authentication.getPrincipal() + &quot;&quot;;</span>
+<span class="fc" id="L215">		log.info(&quot;User {} request to search users : {}&quot;, username, criteria);		</span>
+<span class="fc" id="L216">		UserSearchResponse resp = userService.search(criteria);</span>
+<span class="fc" id="L217">		return ResponseEntity.ok().body(resp);</span>
+
+	}
+	
+	/**
+	 * Method to unlock user
+	 * 
+	 * @param authentication Should be a user with 'auth-server' scope.
+	 * @param request UnlockUserRequest object contains username to be unlock
+	 * @return UnlockUserResponse
+	 * @throws Exception
+	 */
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server')&quot;)
+	@RequestMapping(value = &quot;/user/unlock&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;UnlockUserResponse&gt; unlockUser(OAuth2Authentication authentication,
+	        @RequestBody @Valid UnlockUserRequest request) throws Exception {
+<span class="fc" id="L233">		String username = authentication.getPrincipal() + &quot;&quot;;</span>
+<span class="fc" id="L234">		log.info(&quot;User {} request to unlock user account : {}&quot;, username, request);</span>
+<span class="fc" id="L235">		UnlockUserResponse response = userService.unlockUser(request);</span>
+<span class="fc" id="L236">		return ResponseEntity.ok().body(response);</span>
+	}
+	
+	/**
+	 * Method user request reset password 
+	 * 
+	 * @param request contains username of current user and reCaptcah token in request params
+	 * 
+	 * @return true/failed
+	 * @throws Exception
+	 */
+	@RequestMapping(value = &quot;/user/password/reset/request&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;ResetPasswordResponse&gt; resetPassword(@RequestBody @Valid ResetPasswordRequest request) throws Exception {
+	
+<span class="fc" id="L250">		ResetPasswordResponse response = userService.resetPasswordRequest(request);</span>
+<span class="fc" id="L251">		log.info(&quot;REST request to reset user password : {}, result: {}&quot;, request, response);	</span>
+<span class="fc" id="L252">		response.setError(null);</span>
+<span class="fc" id="L253">		authenticationLoggingService.sendTransactionToQueue(request.getUsername(), TransactionAction.PASSWORD_RESET_REQUEST);</span>
+<span class="fc" id="L254">		return ResponseEntity.ok().body(response);</span>
+	}
+	
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server') or isAuthenticated()&quot;)
+	@RequestMapping(value = &quot;/user/password/reset&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;ChangePasswordResponse&gt; changePassword(OAuth2Authentication authentication, @RequestBody @Valid ChangePasswordRequest request) throws Exception {
+<span class="fc" id="L260">		String username = authentication.getPrincipal() + &quot;&quot;;</span>
+			
+<span class="fc" id="L262">		ChangePasswordResponse response = userService.changePassword(username, request);</span>
+<span class="fc" id="L263">		request.setPassword(null);</span>
+<span class="fc" id="L264">		log.info(&quot;User {} request to change user password, result: {}&quot;, username, response);		</span>
+<span class="fc" id="L265">		authenticationLoggingService.sendTransactionToQueue(username, TransactionAction.PASSWORD_RESET);</span>
+<span class="fc" id="L266">		return ResponseEntity.ok().body(response);</span>
+	}
+	
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server') or isAuthenticated()&quot;)
+	@RequestMapping(value = &quot;/customer/ip/update&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;Boolean&gt; updateCustomerIpConfig(OAuth2Authentication authentication, @RequestBody @Valid UpdateCustomerIpRequest request) throws Exception {
+<span class="fc" id="L272">		String username = authentication.getPrincipal() + &quot;&quot;;</span>
+			
+<span class="fc" id="L274">		boolean response = customerIpAddressService.updateCustomerIpAddresses(username, request);</span>
+<span class="fc" id="L275">		log.info(&quot;User {} request to update customer ip config, result: {}&quot;, username, response);		</span>
+<span class="fc" id="L276">		return ResponseEntity.ok().body(response);</span>
+	}
+	
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server') or isAuthenticated()&quot;)
+	@RequestMapping(value = &quot;/customer/ip/get&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;List&lt;CustomerIpAddressResponse&gt;&gt; getCustomerIpConfig(OAuth2Authentication authentication, @RequestBody @Valid RequestCustomerIpConfig request) throws Exception {
+<span class="fc" id="L282">		String username = authentication.getPrincipal() + &quot;&quot;;			</span>
+<span class="fc" id="L283">		List&lt;CustomerIpAddressResponse&gt; response = customerIpAddressService.getCustomerIpAddress(request.getAccountNumber());</span>
+<span class="fc" id="L284">		log.info(&quot;User {} request to get customer ip config, result: {}&quot;, username, response);		</span>
+<span class="fc" id="L285">		return ResponseEntity.ok().body(response);</span>
+	}
+	
+	@PreAuthorize(&quot;#oauth2.hasScope('auth-server') or isAuthenticated()&quot;)
+	@RequestMapping(value = &quot;/customer/ip/delete&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;Boolean&gt; deleteCustomerIpConfig(OAuth2Authentication authentication, @RequestBody @Valid RequestCustomerIpConfig request) throws Exception {
+<span class="fc" id="L291">		String username = authentication.getPrincipal() + &quot;&quot;;</span>
+			
+<span class="fc" id="L293">		boolean res = customerIpAddressService.delete(request.getAccountNumber());</span>
+<span class="fc" id="L294">		log.info(&quot;User {} request to delete customer ip config, result: {}&quot;, username, res);		</span>
+<span class="fc" id="L295">		return ResponseEntity.ok().body(res);</span>
+	}
+
+	@PreAuthorize(&quot;#oauth2.hasScope('select_role')&quot;)
+	@RequestMapping(value = &quot;/selectRole&quot;, method = RequestMethod.POST)
+	public ResponseEntity&lt;OAuth2AccessToken&gt; selectRole(OAuth2Authentication authentication, @RequestBody @Valid RequestSelectRole request) throws Exception {
+<span class="fc" id="L301">		log.info(&quot;User request to select role {}&quot;, request);</span>
+<span class="fc" id="L302">		OAuth2AccessToken res = userService.selectRole(authentication, request);</span>
+
+<span class="fc" id="L304">		ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.ok();</span>
+
+<span class="fc" id="L306">		Optional.ofNullable(res).ifPresent(</span>
+<span class="fc" id="L307">				token -&gt; Optional.ofNullable(token.getRefreshToken()).</span>
+<span class="pc" id="L308">						ifPresent(refresh_token -&gt; responseBuilder.header(&quot;Set-Cookie&quot;, TokenEndpoint.refreshTokenCookie(refresh_token.toString(),context.getContextPath()))));</span>
+
+<span class="fc" id="L310">		return responseBuilder.body(res);</span>
+	}
+	
+
+	private boolean validateGrantType(String grantType) {
+<span class="fc bfc" id="L315" title="All 2 branches covered.">		return grantType.equals(GrantType.PASSWORD.getName())</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">				|| grantType.equals(GrantType.CLIENT_CREDENTIALS.getName()) ? true : false;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

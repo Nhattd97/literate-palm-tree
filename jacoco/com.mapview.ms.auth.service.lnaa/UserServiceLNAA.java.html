@@ -1,0 +1,580 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserServiceLNAA.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa</a> &gt; <span class="el_source">UserServiceLNAA.java</span></div><h1>UserServiceLNAA.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.mapview.ms.auth.beans.NVPName;
+import com.mapview.ms.auth.beans.UserDto;
+import com.mapview.ms.auth.controller.UserRequest;
+import com.mapview.ms.auth.entity.*;
+import com.mapview.ms.auth.exceptions.MapviewGlobalException;
+import com.mapview.ms.auth.request.RequestAccountDetailsBuilder;
+import com.mapview.ms.auth.request.RequestSelectRole;
+import com.mapview.ms.auth.service.OauthClientDetailsService;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAUserData;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAUserRole;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.OAuth2Request;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
+import org.springframework.stereotype.Component;
+
+import com.mapview.ms.auth.exceptions.ErrorCode;
+import com.mapview.ms.auth.exceptions.ExceptionResponse;
+import com.mapview.ms.auth.exceptions.LNAAValidationErrorCode;
+import com.mapview.ms.auth.repository.UserRepository;
+import com.mapview.ms.auth.request.AdminChangeUserPasswordRequest;
+import com.mapview.ms.auth.request.ChangePasswordRequest;
+import com.mapview.ms.auth.request.RequestAccountDetails;
+import com.mapview.ms.auth.request.ResetPasswordRequest;
+import com.mapview.ms.auth.request.UnlockUserRequest;
+import com.mapview.ms.auth.request.UpdateUserNVPRequest;
+import com.mapview.ms.auth.request.UpdateUserRequest;
+import com.mapview.ms.auth.request.UpdateUserStatusRequest;
+import com.mapview.ms.auth.request.search.UserSearchCriteria;
+import com.mapview.ms.auth.response.AdminChangeUserPasswordResponse;
+import com.mapview.ms.auth.response.BaseServiceResponse;
+import com.mapview.ms.auth.response.ChangePasswordResponse;
+import com.mapview.ms.auth.response.CreateBatchResponse;
+import com.mapview.ms.auth.response.CreateUserResponse;
+import com.mapview.ms.auth.response.GetUserResponse;
+import com.mapview.ms.auth.response.ResetPasswordResponse;
+import com.mapview.ms.auth.response.UnlockUserResponse;
+import com.mapview.ms.auth.response.UpdateUserResponse;
+import com.mapview.ms.auth.response.UpdateUserStatusResponse;
+import com.mapview.ms.auth.service.UserService;
+import com.mapview.ms.auth.service.lnaa.beans.LNAAServiceResponse;
+import com.mapview.ms.auth.service.lnaa.beans.add.LNAAAddUserResponse;
+import com.mapview.ms.auth.service.lnaa.beans.detail.LNAAGetUserResponse;
+import com.mapview.ms.auth.service.lnaa.beans.search.LNAAAdminSearchUserResponse;
+import com.mapview.ms.auth.service.lnaa.beans.update.LNAAUpdateUserResponse;
+import com.mapview.ms.auth.utils.LNAAUtils;
+
+@Component(&quot;userServiceLnaa&quot;)
+public class UserServiceLNAA implements UserService {
+
+<span class="fc" id="L72">    private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceLNAA.class);</span>
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    LNAASession lnaaSession;
+
+    @Autowired
+    ResourceServerTokenServices resourceTokenServices;
+
+    @Autowired
+    OauthClientDetailsService oauthClientDetailsService;
+    
+    @Autowired
+    LNAASettings lnaaSettings;
+
+<span class="fc" id="L89">    public UserServiceLNAA() {</span>
+<span class="fc" id="L90">        LOGGER.info(&quot;UserServiceLNAA service initialised&quot;);</span>
+<span class="fc" id="L91">    }</span>
+
+    @Override
+    public CreateUserResponse create(UserRequestResponse userRequest) {
+<span class="fc" id="L95">    	CreateUserResponse response = new CreateUserResponse();</span>
+
+        try {
+
+<span class="fc" id="L99">            lnaaSession.initSession();</span>
+
+<span class="fc" id="L101">            LOGGER.info(&quot;Creating new user. Username : {}&quot;, userRequest.getUsername());</span>
+            try {
+<span class="fc" id="L103">        		User user = new User();</span>
+<span class="fc" id="L104">        		user.setUsername(LNAAUtils.encodeUsername(userRequest.getUsername()));</span>
+<span class="fc" id="L105">        		user.setBundles(userRequest.getBundles());</span>
+<span class="fc" id="L106">        		user.setEmail(userRequest.getEmail());</span>
+<span class="fc" id="L107">        		user.setFirstname(userRequest.getFirstname());</span>
+<span class="fc" id="L108">        		user.setLastname(userRequest.getLastname());</span>
+<span class="fc" id="L109">        		user.setLanguage(userRequest.getLanguage());</span>
+<span class="fc" id="L110">        		user.setCustomerNumber(userRequest.getAccountDetails().getRequestCust());</span>
+<span class="fc" id="L111">        		user.setAccountNumber(userRequest.getAccountDetails().getRequestAccount());</span>
+<span class="fc" id="L112">        		LNAAAddUserResponse lnaaResponse = lnaaSession.getLnaaRestClient().createUser(user);</span>
+<span class="fc" id="L113">        		int responseCode = lnaaResponse.getStatus().getCode();</span>
+<span class="fc" id="L114">        		String responseMessage = lnaaResponse.getStatus().getMessage();</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        		if (responseCode == 0) {</span>
+<span class="fc" id="L116">        			response.setResult(true);</span>
+<span class="fc" id="L117">        			return response;</span>
+        		} else {
+<span class="fc" id="L119">        			return (CreateUserResponse) getError(response, responseCode, responseMessage);</span>
+        		}
+<span class="fc" id="L121">            } catch (Exception e) {</span>
+<span class="fc" id="L122">            	LOGGER.error(&quot;Error create users {}&quot;, e);</span>
+<span class="fc" id="L123">            	response.setResult(false);</span>
+<span class="fc" id="L124">                return (CreateUserResponse) getErrorUnExpectedError(response, e.toString());</span>
+            }
+
+<span class="fc" id="L127">        } catch (Exception e) {</span>
+<span class="fc" id="L128">            LOGGER.error(&quot;Error create users {}&quot;, e);</span>
+<span class="fc" id="L129">            response.setResult(false);</span>
+<span class="fc" id="L130">            return (CreateUserResponse) getErrorUnExpectedError(response, e.toString());</span>
+        }
+
+    }
+
+    @Override
+    public User loadUserByUsername(String username) throws UsernameNotFoundException {
+        try {
+<span class="fc" id="L138">            UserDto user = new UserDto();</span>
+<span class="fc" id="L139">            user.setUsername(username);</span>
+<span class="fc" id="L140">            GetUserResponse userResponse = fetchByUsername(user);</span>
+
+<span class="fc" id="L142">            return bindingUser(userResponse);</span>
+<span class="fc" id="L143">        } catch (Exception e) {</span>
+<span class="fc" id="L144">            LOGGER.error(&quot;Error loadUserByUsername with exception&quot;, e);</span>
+        }
+<span class="fc" id="L146">        return null;</span>
+    }
+
+    @Override
+    public void deleteAll() {
+<span class="fc" id="L151">        throw new NotImplementedException(&quot;function deleteAll is NOT supported for LNAA-based operations&quot;);</span>
+    }
+
+    @Override
+    public GetUserResponse fetchByUsername(UserDto user) {
+<span class="fc" id="L156">        GetUserResponse response = new GetUserResponse();</span>
+        try {
+<span class="fc" id="L158">            lnaaSession.initSession();</span>
+<span class="fc" id="L159">            user.setUsername(LNAAUtils.encodeUsername(user.getUsername()));</span>
+<span class="fc" id="L160">            LNAARestClient restClient = lnaaSession.getLnaaRestClient();</span>
+<span class="fc" id="L161">            LNAAGetUserResponse lnaaResponse = restClient.getLNAAUser(user);</span>
+<span class="fc" id="L162">            int responseCode = lnaaResponse.getStatus().getCode();</span>
+<span class="fc" id="L163">            String responseMessage = lnaaResponse.getStatus().getMessage();</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            if(responseCode  == 0) {</span>
+<span class="fc" id="L165">               UserDetails userDetails = bindingUserDetails(lnaaResponse.getUserData());</span>
+<span class="fc" id="L166">               response.setUserDetails(userDetails);</span>
+<span class="fc" id="L167">               userDetails = null;</span>
+<span class="fc" id="L168">            } else {</span>
+<span class="fc" id="L169">            	return (GetUserResponse) getError(response, responseCode, responseMessage);</span>
+            }
+<span class="fc" id="L171">            return response;</span>
+<span class="fc" id="L172">        } catch(Exception ex) {</span>
+<span class="fc" id="L173">            return (GetUserResponse) getErrorUnExpectedError(response, ex.toString());</span>
+        }
+    }
+
+    @Override
+    public CreateBatchResponse createBatch(UserRequest users) {
+<span class="fc" id="L179">        throw new NotImplementedException(&quot;Function createBatch is not supported&quot;);</span>
+    }
+
+    @Override
+	public UpdateUserResponse updateUser(UpdateUserRequest user) {
+<span class="fc" id="L184">    	UpdateUserResponse response = new UpdateUserResponse();</span>
+		try {
+<span class="fc" id="L186">			lnaaSession.initSession();</span>
+<span class="fc" id="L187">			user.setUsername(LNAAUtils.encodeUsername(user.getUsername()));</span>
+<span class="fc" id="L188">			LNAARestClient restClient = lnaaSession.getLnaaRestClient();</span>
+<span class="fc" id="L189">			LNAAUpdateUserResponse lnaaResponse = restClient.updateUser(user);</span>
+<span class="fc" id="L190">			int responseCode = lnaaResponse.getStatus().getCode();</span>
+<span class="fc" id="L191">			String responseMessage = lnaaResponse.getStatus().getMessage();</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">			if (responseCode == 0) {</span>
+<span class="fc" id="L193">				UserDetails userDetails = bindingUserDetails(lnaaResponse.getUserData());</span>
+<span class="fc" id="L194">				response.setUserDetails(userDetails);</span>
+<span class="fc" id="L195">				updateUserNVP(response, restClient, user, lnaaResponse);</span>
+<span class="fc" id="L196">				return response;</span>
+			} else {
+<span class="fc" id="L198">				return (UpdateUserResponse) getError(response, responseCode, responseMessage);</span>
+			}
+
+<span class="fc" id="L201">		} catch (Exception ex) {</span>
+<span class="fc" id="L202">			return (UpdateUserResponse) getErrorUnExpectedError(response, ex.toString());</span>
+		}
+	}
+
+    @Override
+    public UpdateUserStatusResponse updateUserStatus(UpdateUserStatusRequest user) {
+<span class="fc" id="L208">    	UpdateUserStatusResponse response = new UpdateUserStatusResponse();</span>
+    	try {
+<span class="fc" id="L210">    		lnaaSession.initSession();</span>
+<span class="fc" id="L211">    		user.setUsername(LNAAUtils.encodeUsername(user.getUsername()));</span>
+<span class="fc" id="L212">    		LNAARestClient resclient = lnaaSession.getLnaaRestClient();</span>
+<span class="fc" id="L213">    		LNAAServiceResponse lnnaResponse = resclient.updateUserStatus(user);</span>
+<span class="fc" id="L214">    		int responseCode = lnnaResponse.getStatus().getCode();</span>
+<span class="fc" id="L215">			String responseMessage = lnnaResponse.getStatus().getMessage();</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">			if (responseCode == 0) {</span>
+<span class="fc" id="L217">				response.setResult(true);</span>
+<span class="fc" id="L218">				response.setError(null);</span>
+<span class="fc" id="L219">				return response;</span>
+			} else {
+<span class="fc" id="L221">				response.setResult(false);</span>
+<span class="fc" id="L222">				return (UpdateUserStatusResponse) getError(response, responseCode, responseMessage);</span>
+			}
+
+<span class="fc" id="L225">		} catch (Exception ex) {</span>
+<span class="fc" id="L226">			return (UpdateUserStatusResponse) getErrorUnExpectedError(response, ex.toString());</span>
+		}
+    }
+
+
+	@Override
+	public AdminChangeUserPasswordResponse changeUserPassword(AdminChangeUserPasswordRequest request) {
+<span class="fc" id="L233">		AdminChangeUserPasswordResponse response = new AdminChangeUserPasswordResponse();</span>
+		try {
+<span class="fc" id="L235">			lnaaSession.initSession();</span>
+<span class="fc" id="L236">			request.setUsername(LNAAUtils.encodeUsername(request.getUsername()));</span>
+<span class="fc" id="L237">			LNAARestClient resclient = lnaaSession.getLnaaRestClient();</span>
+<span class="fc" id="L238">			LNAAServiceResponse lnaaResponse = resclient.resetPasswordRequest(request);</span>
+<span class="fc" id="L239">			int responseCode = lnaaResponse.getStatus().getCode();</span>
+<span class="fc" id="L240">			String responseMessage = lnaaResponse.getStatus().getMessage();</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">			if (responseCode == 0) {</span>
+<span class="fc" id="L242">				response.setResult(true);</span>
+			} else {
+<span class="fc" id="L244">				response = (AdminChangeUserPasswordResponse) getError(response, responseCode, responseMessage);</span>
+			}
+<span class="fc" id="L246">		} catch (Exception ex) {</span>
+<span class="fc" id="L247">			response = (AdminChangeUserPasswordResponse) getErrorUnExpectedError(response, ex.toString());</span>
+<span class="fc" id="L248">		}</span>
+<span class="fc" id="L249">		return response;</span>
+	}
+
+    public LNAASession getLnaaSession() {
+<span class="fc" id="L253">        return lnaaSession;</span>
+    }
+
+	@Override
+	public UserSearchResponse search(UserSearchCriteria criteria) {
+<span class="fc" id="L258">		UserSearchResponse resp = new UserSearchResponse(null);</span>
+		try {
+<span class="fc" id="L260">			lnaaSession.initSession();</span>
+<span class="fc" id="L261">			LNAARestClient restClient = lnaaSession.getLnaaRestClient();</span>
+<span class="fc" id="L262">			LNAAAdminSearchUserResponse lnaaResp = restClient.searchUser(criteria);</span>
+<span class="fc" id="L263">			int responseCode = lnaaResp.getStatus().getCode();</span>
+<span class="fc" id="L264">			String responseMessage = lnaaResp.getStatus().getMessage();</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">			if (responseCode != 0) {</span>
+<span class="fc" id="L266">				return (UserSearchResponse) getError(resp, responseCode, responseMessage);</span>
+			}
+
+<span class="fc" id="L269">			UserSearchPaging paging = new UserSearchPaging();</span>
+<span class="fc" id="L270">			paging.setStartAt(Integer.parseInt(lnaaResp.getSearchData().getPaging().getStartAt()));</span>
+<span class="fc" id="L271">			paging.setCount(lnaaResp.getSearchData().getSearchCounts().getTotalRecords());</span>
+<span class="fc" id="L272">			resp.setPaging(paging);</span>
+<span class="fc" id="L273">			resp.setError(null);</span>
+
+<span class="pc bpc" id="L275" title="1 of 2 branches missed.">			if(lnaaResp.getSearchData().getUsers() == null) {</span>
+<span class="nc" id="L276">				return resp;</span>
+			}
+
+<span class="fc bfc" id="L279" title="All 2 branches covered.">			for (LNAAUserData data : lnaaResp.getSearchData().getUsers()) {</span>
+
+<span class="fc" id="L281">				UserDetails details = bindingUserDetails(data);</span>
+
+<span class="fc" id="L283">				resp.getResults().add(details);</span>
+
+<span class="fc" id="L285">			}</span>
+
+
+<span class="fc" id="L288">			return resp;</span>
+<span class="fc" id="L289">		} catch (Exception ex) {</span>
+<span class="fc" id="L290">			LOGGER.error(&quot;Error search users {}&quot;, ex);</span>
+<span class="fc" id="L291">			return (UserSearchResponse) getErrorUnExpectedError(resp, ex.toString());</span>
+		}
+
+	}
+
+	@Override
+	public UnlockUserResponse unlockUser(UnlockUserRequest request) {
+<span class="fc" id="L298">		UnlockUserResponse response = new UnlockUserResponse();</span>
+		try {
+<span class="fc" id="L300">			lnaaSession.initSession();</span>
+<span class="fc" id="L301">			String username = request.getUsername();</span>
+<span class="fc" id="L302">			request.setUsername(LNAAUtils.encodeUsername(username));</span>
+<span class="fc" id="L303">			LNAARestClient resclient = lnaaSession.getLnaaRestClient();</span>
+<span class="fc" id="L304">			LNAAServiceResponse lnnaResponse = resclient.unlockUser(request);</span>
+<span class="fc" id="L305">			int responseCode = lnnaResponse.getStatus().getCode();</span>
+<span class="fc" id="L306">			String responseMessage = lnnaResponse.getStatus().getMessage();</span>
+<span class="pc bpc" id="L307" title="1 of 2 branches missed.">			if (responseCode == 0) {</span>
+<span class="fc" id="L308">				response.setResult(true);</span>
+			} else {
+<span class="nc" id="L310">				response = (UnlockUserResponse) getError(response, responseCode, responseMessage);</span>
+			}
+<span class="fc" id="L312">		} catch (Exception ex) {</span>
+<span class="fc" id="L313">			response = (UnlockUserResponse) getErrorUnExpectedError(response, ex.toString());</span>
+<span class="fc" id="L314">		}</span>
+<span class="fc" id="L315">		return response;</span>
+	}
+
+	@Override
+	public ResetPasswordResponse resetPasswordRequest(ResetPasswordRequest request) {
+<span class="fc" id="L320">		ResetPasswordResponse response = new ResetPasswordResponse();</span>
+		try {
+<span class="fc" id="L322">			lnaaSession.initSession();</span>
+<span class="fc" id="L323">			LNAARestClient resclient = lnaaSession.getLnaaRestClient();</span>
+<span class="fc" id="L324">			request.setUsername(LNAAUtils.encodeUsername(request.getUsername()));</span>
+<span class="fc" id="L325">			AdminChangeUserPasswordRequest changeRequest = new AdminChangeUserPasswordRequest();</span>
+<span class="fc" id="L326">			changeRequest.setUsername(request.getUsername());</span>
+<span class="fc" id="L327">			changeRequest.setPassword(null);</span>
+
+<span class="fc" id="L329">			LNAAServiceResponse lnnaResponse = resclient.resetPasswordRequest(changeRequest);</span>
+<span class="fc" id="L330">			int responseCode = lnnaResponse.getStatus().getCode();</span>
+<span class="fc" id="L331">			String responseMessage = lnnaResponse.getStatus().getMessage();</span>
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">			if (responseCode == 0) {</span>
+<span class="fc" id="L333">				response.setError(null);</span>
+			} else {
+<span class="nc" id="L335">				response = (ResetPasswordResponse) getError(response, responseCode, responseMessage);</span>
+			}
+
+<span class="fc" id="L338">		} catch (Exception ex) {</span>
+<span class="fc" id="L339">			response = (ResetPasswordResponse) getErrorUnExpectedError(response, ex.toString());</span>
+<span class="fc" id="L340">		}</span>
+<span class="fc" id="L341">		return response;</span>
+	}
+
+	@Override
+	public ChangePasswordResponse changePassword(String username, ChangePasswordRequest request) {
+<span class="fc" id="L346">		ChangePasswordResponse response = new ChangePasswordResponse();</span>
+
+		try {
+<span class="fc" id="L349">			lnaaSession.initSession();</span>
+<span class="fc" id="L350">			LNAARestClient resclient = lnaaSession.getLnaaRestClient();</span>
+
+<span class="fc" id="L352">			AdminChangeUserPasswordRequest changeRequest = new AdminChangeUserPasswordRequest();</span>
+<span class="fc" id="L353">			changeRequest.setPassword(request.getPassword());</span>
+<span class="fc" id="L354">			changeRequest.setUsername(LNAAUtils.encodeUsername(username));</span>
+
+
+<span class="fc" id="L357">			LNAAServiceResponse lnnaResponse = resclient.changeUserPassword(changeRequest);</span>
+<span class="fc" id="L358">			int responseCode = lnnaResponse.getStatus().getCode();</span>
+<span class="fc" id="L359">			String responseMessage = lnnaResponse.getStatus().getMessage();</span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">			if (responseCode == 0) {</span>
+<span class="fc" id="L361">				response.setResult(true);</span>
+			} else {
+<span class="fc" id="L363">				response = (ChangePasswordResponse) getError(response, responseCode, responseMessage);</span>
+			}
+
+<span class="fc" id="L366">		} catch (Exception ex) {</span>
+<span class="fc" id="L367">			response = (ChangePasswordResponse) getErrorUnExpectedError(response, ex.toString());</span>
+<span class="fc" id="L368">		}</span>
+<span class="fc" id="L369">		return response;</span>
+
+	}
+
+	@Override
+	public OAuth2AccessToken selectRole(OAuth2Authentication authentication, RequestSelectRole request) {
+<span class="fc" id="L375">		OAuth2Request oAuth2Request = authentication.getOAuth2Request().narrowScope(Set.of(request.getScope()));</span>
+
+<span class="fc" id="L377">		Authentication newAuthentication = getAuthentication(authentication, request);</span>
+<span class="fc" id="L378">		OAuth2Authentication newOAuth2Authentication = new OAuth2Authentication(oAuth2Request, newAuthentication);</span>
+
+<span class="fc" id="L380">		((DefaultTokenServices) resourceTokenServices).setClientDetailsService(oauthClientDetailsService);</span>
+<span class="fc" id="L381">		return ((DefaultTokenServices) resourceTokenServices).createAccessToken(newOAuth2Authentication);</span>
+	}
+
+	private Authentication getAuthentication(Authentication authentication, RequestSelectRole request) {
+<span class="fc" id="L385">		GetUserResponse userResponse = (GetUserResponse) authentication.getAuthorities().stream().findFirst().orElse(null);</span>
+
+<span class="fc" id="L387">		validateSelectRoleRequest(userResponse, request);</span>
+
+<span class="fc" id="L389">		String[] roleItems = StringUtils.split(request.getRole(), &quot;_&quot;);</span>
+
+<span class="fc" id="L391">		RequestAccountDetails requestAccountDetails = new RequestAccountDetailsBuilder()</span>
+<span class="fc" id="L392">			.withCustomerNumber(roleItems[1])</span>
+<span class="fc" id="L393">			.withAccountNumber(roleItems[2])</span>
+<span class="fc" id="L394">			.build();</span>
+
+<span class="fc" id="L396">		UserRequestResponse userRequestResponse = new UserRequestResponseBuilder()</span>
+<span class="fc" id="L397">			.withAccountDetails(requestAccountDetails)</span>
+<span class="fc" id="L398">			.withBundles(getBundles(roleItems))</span>
+<span class="fc" id="L399">			.withRoleBundles(getRoleBundles(userResponse, request))</span>
+<span class="fc" id="L400">            .withLanguage(getLanguage(userResponse))</span>
+<span class="fc" id="L401">			.build();</span>
+
+<span class="fc" id="L403">		userResponse.getUserDetails().setUser(userRequestResponse);</span>
+<span class="fc" id="L404">		return new UsernamePasswordAuthenticationToken(authentication.getPrincipal(), authentication.getCredentials(), Collections.singleton(userResponse));</span>
+	}
+
+	private String getLanguage(GetUserResponse userResponse) {
+<span class="fc" id="L408">		return userResponse.getUserDetails().getUser().getLanguage();</span>
+	}
+
+	private List&lt;String&gt; getBundles(String[] roleItems) {
+<span class="fc" id="L412">		return Stream.of(roleItems)</span>
+<span class="fc" id="L413">			.skip(3)</span>
+<span class="fc" id="L414">			.collect(Collectors.toList());</span>
+	}
+
+	private List&lt;RoleBundle&gt; getRoleBundles(GetUserResponse userResponse, RequestSelectRole request) {
+<span class="fc" id="L418">    	UserRequestResponse userRequestResponse = new UserRequestResponseBuilder(userResponse).build();</span>
+<span class="fc" id="L419">		return userRequestResponse.getRoleBundles().stream()</span>
+<span class="fc" id="L420">			.filter(roleBundle -&gt; StringUtils.endsWith(request.getRole(), roleBundle.getRole()))</span>
+<span class="fc" id="L421">			.collect(Collectors.toList());</span>
+	}
+
+	private void validateSelectRoleRequest(GetUserResponse userResponse, RequestSelectRole request) {
+<span class="fc bfc" id="L425" title="All 2 branches covered.">		if (userResponse == null) {</span>
+<span class="fc" id="L426">			throw new MapviewGlobalException(ErrorCode.LNAA_LOGIN_WRONG_CREDENTITALS, ErrorCode.LNAA_LOGIN_WRONG_CREDENTITALS.getCompareString());</span>
+		}
+
+<span class="fc" id="L429">		UserRequestResponse userRequestResponse = new UserRequestResponseBuilder(userResponse).build();</span>
+<span class="fc" id="L430">		boolean existedRole = userRequestResponse.getRoles().stream()</span>
+<span class="fc" id="L431">			.anyMatch(role -&gt; request.getRole().equalsIgnoreCase(role.getRoleCode()));</span>
+<span class="fc bfc" id="L432" title="All 2 branches covered.">		if (!existedRole) {</span>
+<span class="fc" id="L433">			throw new MapviewGlobalException(ErrorCode.BAD_REQUEST.getCompareString());</span>
+		}
+
+<span class="fc bfc" id="L436" title="All 2 branches covered.">		if (StringUtils.split(request.getRole(), &quot;_&quot;).length &lt; 4) {</span>
+<span class="fc" id="L437">			throw new MapviewGlobalException(ErrorCode.BAD_REQUEST.getCompareString());</span>
+		}
+<span class="fc" id="L439">	}</span>
+
+	public UserDetails bindingUserDetails(LNAAUserData data) {
+<span class="fc" id="L442">    	UserDetails userDetails = new UserDetails();</span>
+
+<span class="fc" id="L444">		UserRequestResponse user = new UserRequestResponse();</span>
+<span class="fc" id="L445">		String username = data.getUserInfo().getLogin_id().split(&quot;@&quot;)[0];</span>
+<span class="fc" id="L446">		user.setUsername(LNAAUtils.decodeUsername(username));</span>
+<span class="fc" id="L447">		user.setFirstname(data.getUserInfo().getFirst_name());</span>
+<span class="fc" id="L448">		user.setLastname(data.getUserInfo().getLast_name());</span>
+<span class="fc" id="L449">		user.setEmail(data.getUserInfo().getEmail_address());</span>
+<span class="fc" id="L450">		user.setLanguage(data.getNVP(NVPName.LANGUAGE.name()));</span>
+<span class="fc" id="L451">		String bundles = data.getNVP(NVPName.BUNDLES.name());</span>
+<span class="fc bfc" id="L452" title="All 2 branches covered.">		if (StringUtils.isNotBlank(bundles))	{</span>
+<span class="fc" id="L453">			user.setBundles(Arrays.asList(bundles.split(&quot;,&quot;)));</span>
+		}
+
+<span class="fc" id="L456">		String roleBundles = data.getNVP(NVPName.ROLE_BUNDLES.name());</span>
+<span class="fc bfc" id="L457" title="All 2 branches covered.">		if (StringUtils.isNotBlank(roleBundles)) {</span>
+<span class="fc" id="L458">			user.setRoleBundles(getNvpRoleBundles(roleBundles));</span>
+		}
+
+<span class="fc bfc" id="L461" title="All 2 branches covered.">		if (data.getRoles() != null) {</span>
+<span class="fc" id="L462">			user.setRoles(getValidUserRoles(data.getRoles()));</span>
+		}
+
+<span class="fc" id="L465">		String custAccountInfo = data.getNVP(NVPName.CUSTOMER_ACCOUNT_NUMBER.name());</span>
+<span class="fc bfc" id="L466" title="All 2 branches covered.">		if (StringUtils.isNotBlank(custAccountInfo)) {</span>
+<span class="fc" id="L467">			String[] custAccArr = custAccountInfo.split(&quot;#&quot;);</span>
+<span class="fc" id="L468">			user.setAccountDetails(new RequestAccountDetails(custAccArr[0], custAccArr[1]));</span>
+		}
+
+<span class="fc" id="L471">		UserAccountDetails accountDetails = new UserAccountDetails();</span>
+
+<span class="fc" id="L473">		userDetails.setUser(user);</span>
+
+<span class="fc" id="L475">		accountDetails.setLastLogin(data.getUserLoginData().getLastLoginDate());</span>
+<span class="fc" id="L476">		accountDetails.setStatus(data.getUserInfo().getStatus());</span>
+<span class="fc" id="L477">		accountDetails.setLocked(getBoolean(data.getUserLoginData().getPasswordLockout()));</span>
+<span class="fc" id="L478">		accountDetails.setExpired(getBoolean(data.getUserLoginData().getResetPasswordRequired()));</span>
+<span class="fc" id="L479">		accountDetails.setWrongLoginAttempts(data.getUserLoginData().getWrongPasswordLoginAttempts());</span>
+<span class="fc" id="L480">		accountDetails.setExpireDate(data.getUserLoginData().getPasswordExpireDate());</span>
+<span class="fc" id="L481">		accountDetails.setResetRequired(data.getUserLoginData().getResetPasswordRequired());</span>
+
+<span class="fc" id="L483">		userDetails.setAccountDetails(accountDetails);</span>
+<span class="fc" id="L484">		return userDetails;</span>
+    }
+
+	private User bindingUser(GetUserResponse userResponse) {
+<span class="fc" id="L488">		User user = new User();</span>
+<span class="fc" id="L489">		UserRequestResponse userRequestResponse = userResponse.getUserDetails().getUser();</span>
+<span class="fc" id="L490">		RequestAccountDetails requestAccountDetails = userRequestResponse.getAccountDetails();</span>
+<span class="fc" id="L491">		UserAccountDetails userAccountDetails = userResponse.getUserDetails().getAccountDetails();</span>
+
+<span class="fc" id="L493">		user.setUsername(userRequestResponse.getUsername());</span>
+<span class="fc" id="L494">		user.setBundles(userRequestResponse.getBundles());</span>
+<span class="fc" id="L495">		user.setFirstname(userRequestResponse.getFirstname());</span>
+<span class="fc" id="L496">		user.setLastname(userRequestResponse.getLastname());</span>
+<span class="fc" id="L497">		user.setEmail(userRequestResponse.getEmail());</span>
+<span class="fc" id="L498">		user.setLanguage(userRequestResponse.getLanguage());</span>
+
+<span class="fc" id="L500">		user.setAccountDetails(requestAccountDetails);</span>
+<span class="fc" id="L501">		user.setCustomerNumber(requestAccountDetails.getRequestCust());</span>
+<span class="fc" id="L502">		user.setAccountNumber(requestAccountDetails.getRequestAccount());</span>
+
+<span class="fc" id="L504">		user.setWrongLoginAttempts(userAccountDetails.getWrongLoginAttempts());</span>
+<span class="fc" id="L505">		user.setExpireDate(userAccountDetails.getExpireDate());</span>
+<span class="fc" id="L506">		user.setResetRequired(userAccountDetails.getResetRequired());</span>
+
+<span class="fc" id="L508">		return user;</span>
+	}
+
+	private List&lt;UserRole&gt; getValidUserRoles(List&lt;LNAAUserRole&gt; lnaaUserRoles) {
+<span class="fc" id="L512">		return lnaaUserRoles.stream()</span>
+<span class="fc" id="L513">			.filter(role -&gt; lnaaSettings.getUser_domain().equalsIgnoreCase(role.getGroupCode()))</span>
+<span class="fc" id="L514">			.map(role -&gt; new UserRole(role.getRoleName(), role.getRoleCode(), role.getRoleDescription()))</span>
+<span class="fc" id="L515">			.collect(Collectors.toList());</span>
+	}
+
+	public static List&lt;RoleBundle&gt; getNvpRoleBundles(String roleBundles) {
+<span class="fc" id="L519">		return Stream.of(StringUtils.split(roleBundles, &quot;,&quot;))</span>
+<span class="fc" id="L520">			.map(roleBundle -&gt; {</span>
+<span class="fc" id="L521">				String[] roleBundleItems = StringUtils.split(roleBundle, &quot;#&quot;);</span>
+<span class="fc bfc" id="L522" title="All 2 branches covered.">				if (roleBundleItems.length &gt; 1) {</span>
+<span class="fc" id="L523">					String[] bundleItems = StringUtils.split(roleBundleItems[1], &quot;_&quot;);</span>
+<span class="fc" id="L524">					return new RoleBundle(roleBundleItems[0], Arrays.asList(bundleItems));</span>
+				}
+<span class="fc" id="L526">				return null;</span>
+			})
+<span class="fc" id="L528">			.filter(Objects::nonNull)</span>
+<span class="fc" id="L529">			.collect(Collectors.toList());</span>
+	}
+
+	private boolean getBoolean(String value)	{
+<span class="fc bfc" id="L533" title="All 2 branches covered.">		if(value == null ) {</span>
+<span class="fc" id="L534">			return false;</span>
+		}
+<span class="fc" id="L536">		return value.equals(&quot;1&quot;);</span>
+	}
+
+	private Object getError(BaseServiceResponse reponse, int responseCode, String responseMessage) {
+
+<span class="fc" id="L541">		LNAAValidationErrorCode status = LNAAValidationErrorCode.getLNAAValidationErrorCode(responseCode);</span>
+<span class="fc" id="L542">		ErrorCode mvgErrorCode = ErrorCode.getErrorCode(status.getMvgCode());</span>
+<span class="fc" id="L543">		ExceptionResponse error = new ExceptionResponse(new Date(), status.getMvgCode(),</span>
+<span class="fc" id="L544">		        mvgErrorCode.getCompareString(), UUID.randomUUID().toString(), responseMessage);</span>
+<span class="fc" id="L545">		reponse.setError(error);</span>
+<span class="fc" id="L546">		return reponse;</span>
+
+	}
+
+	private Object getErrorUnExpectedError(BaseServiceResponse reponse, String message) {
+<span class="fc" id="L551">		LNAAValidationErrorCode status = LNAAValidationErrorCode.UNEXPECTED_ERROR;</span>
+<span class="fc" id="L552">		ErrorCode mvgErrorCode = ErrorCode.getErrorCode(status.getMvgCode());</span>
+<span class="fc" id="L553">		ExceptionResponse error = new ExceptionResponse(new Date(), status.getMvgCode(),</span>
+<span class="fc" id="L554">		        mvgErrorCode.getCompareString(), UUID.randomUUID().toString(), message);</span>
+<span class="fc" id="L555">		reponse.setError(error);</span>
+<span class="fc" id="L556">		return reponse;</span>
+	}
+
+	private UpdateUserResponse updateUserNVP(UpdateUserResponse response, LNAARestClient restClient,
+	        UpdateUserRequest request, LNAAUpdateUserResponse lnaaResponse) throws LNAAException {
+<span class="fc" id="L561">		int nvpBundleId = lnaaResponse.getUserData().getNVPId(NVPName.BUNDLES.name());</span>
+<span class="fc" id="L562">		int nvpLanguageId = lnaaResponse.getUserData().getNVPId(NVPName.LANGUAGE.name());</span>
+
+<span class="fc" id="L564">		UpdateUserNVPRequest updateBundleRequest = new UpdateUserNVPRequest();</span>
+<span class="fc" id="L565">		updateBundleRequest.setNvpBundleId(nvpBundleId + &quot;&quot;);</span>
+<span class="fc" id="L566">		updateBundleRequest.setNvpLanguageId(nvpLanguageId + &quot;&quot;);</span>
+<span class="fc" id="L567">		updateBundleRequest.setUsername(request.getUsername());</span>
+<span class="fc" id="L568">		updateBundleRequest.setAccountDetails(request.getAccountDetails());</span>
+<span class="fc" id="L569">		updateBundleRequest.setLanguage(request.getLanguage());</span>
+<span class="fc" id="L570">		updateBundleRequest.setBundles(request.getBundles());</span>
+
+<span class="fc" id="L572">		LNAAServiceResponse updateBundleResponse = restClient.updateUserBundle(updateBundleRequest);</span>
+<span class="pc bpc" id="L573" title="1 of 2 branches missed.">		if (updateBundleResponse.getStatus().getCode() == 0) {</span>
+<span class="fc" id="L574">			response.getUserDetails().getUser().setBundles(request.getBundles());</span>
+<span class="fc" id="L575">			response.getUserDetails().getUser().setLanguage(request.getLanguage());</span>
+		}
+<span class="fc" id="L577">		return response;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

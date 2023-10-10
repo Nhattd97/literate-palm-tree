@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SamlAuthenticationSuccessHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.utils.saml</a> &gt; <span class="el_source">SamlAuthenticationSuccessHandler.java</span></div><h1>SamlAuthenticationSuccessHandler.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.utils.saml;
+
+import com.mapview.ms.auth.exceptions.ErrorCode;
+import com.mapview.ms.auth.exceptions.MapviewGlobalException;
+import com.mapview.ms.auth.utils.TokenUtils;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.message.BasicNameValuePair;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
+import org.springframework.security.saml.SAMLCredential;
+import org.springframework.security.web.DefaultRedirectStrategy;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+<span class="fc" id="L28">@Slf4j</span>
+public class SamlAuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+    public static final String ID_TYPE = &quot;IDType&quot;;
+    public static final String ID = &quot;ID&quot;;
+    public static final String SPACE_ESCAPED_CHAR = &quot;%20&quot;;
+    public static final String SPACE_CHAR = &quot; &quot;;
+<span class="fc" id="L34">    private List&lt;String&gt; VALID_LOCATION_PARAMS = Arrays.asList(&quot;latitude&quot;, &quot;longitude&quot;, &quot;address&quot;, &quot;postcode&quot;, &quot;country&quot;, &quot;ID&quot;, &quot;IDType&quot;, &quot;Reference&quot;, &quot;lat&quot;, &quot;lng&quot;);</span>
+<span class="fc" id="L35">    private String LOCATION_ID = &quot;locationID&quot;;</span>
+    @Autowired
+    private ResourceServerTokenServices resourceTokenServices;
+
+    public SamlAuthenticationSuccessHandler(String defaultTarget) {
+<span class="fc" id="L40">        super();</span>
+<span class="fc" id="L41">        this.setDefaultTargetUrl(defaultTarget);</span>
+<span class="fc" id="L42">    }</span>
+
+<span class="pc" id="L44">    @SneakyThrows</span>
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+<span class="fc" id="L47">        OAuth2AccessToken accessToken = TokenUtils.getAccessTokenFromAuthentication(authentication, resourceTokenServices);</span>
+
+<span class="fc" id="L49">        SAMLCredential credential = (SAMLCredential) authentication.getCredentials();</span>
+<span class="fc" id="L50">        String relayState = credential.getRelayState();</span>
+<span class="fc" id="L51">        URIBuilder targetUriBuilder = new URIBuilder(getDefaultTargetUrl());</span>
+
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (StringUtils.isNotBlank(relayState)) {</span>
+<span class="fc" id="L54">            List&lt;NameValuePair&gt; queryParams = initRelayStateParam(relayState);</span>
+<span class="fc" id="L55">            targetUriBuilder.addParameters(queryParams);</span>
+        }
+
+<span class="fc" id="L58">        targetUriBuilder.addParameter(&quot;token&quot;, accessToken.toString());</span>
+<span class="fc" id="L59">        targetUriBuilder.addParameter(&quot;refresh_token&quot;, accessToken.getRefreshToken().toString());</span>
+
+<span class="fc" id="L61">        DefaultRedirectStrategy redirectStrategy = new DefaultRedirectStrategy();</span>
+<span class="fc" id="L62">        redirectStrategy.setContextRelative(true);</span>
+<span class="fc" id="L63">        redirectStrategy.sendRedirect(request, response,targetUriBuilder.build().toString());</span>
+<span class="fc" id="L64">    }</span>
+
+    private List&lt;NameValuePair&gt; initRelayStateParam(String relayState) {
+        try {
+<span class="fc" id="L68">            relayState = relayState.replaceAll(SPACE_CHAR, SPACE_ESCAPED_CHAR);</span>
+<span class="fc" id="L69">            List&lt;NameValuePair&gt; receivedParams = new URIBuilder(relayState).getQueryParams();</span>
+<span class="fc" id="L70">            List&lt;NameValuePair&gt; queryParams = receivedParams</span>
+<span class="fc" id="L71">                    .stream().filter(pair -&gt;</span>
+<span class="fc" id="L72">                            VALID_LOCATION_PARAMS.contains(pair.getName())</span>
+<span class="fc" id="L73">                    ).collect(Collectors.toList());</span>
+
+<span class="fc" id="L75">            receivedParams.stream().filter(param -&gt; LOCATION_ID.equals(param.getName())).forEach(</span>
+                    param -&gt; {
+<span class="nc" id="L77">                        queryParams.add(new BasicNameValuePair(ID_TYPE, param.getName()));</span>
+<span class="nc" id="L78">                        queryParams.add(new BasicNameValuePair(ID, param.getValue()));</span>
+<span class="nc" id="L79">                    }</span>
+            );
+<span class="fc" id="L81">            return queryParams;</span>
+<span class="nc" id="L82">        } catch (URISyntaxException e) {</span>
+<span class="nc" id="L83">            logger.error(e.getMessage(), e);</span>
+<span class="nc" id="L84">            throw new MapviewGlobalException(ErrorCode.BAD_REQUEST, &quot;Invalid Relay State&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

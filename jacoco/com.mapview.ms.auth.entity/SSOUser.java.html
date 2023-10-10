@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SSOUser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.entity</a> &gt; <span class="el_source">SSOUser.java</span></div><h1>SSOUser.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.entity;
+
+import com.mapview.ms.auth.converter.ListConverter;
+import com.mapview.ms.auth.request.RequestAccountDetails;
+import com.mapview.ms.auth.request.RequestObject;
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.Table;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+
+@Entity
+@Table(name=&quot;sso_user_bundles&quot;)
+<span class="fc" id="L28">public class SSOUser extends RequestObject&lt;User&gt; implements UserDetails, MapviewUser {</span>
+    
+    public static final String SSO_USERNAME_PREFIX = &quot;_sso_&quot;;
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Getter
+    @Setter
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    @Getter
+    @Setter
+    private String ssoId;
+
+    @Getter
+    @Setter
+    private String email;
+
+    @Getter
+    @Setter
+    private String username;
+
+    @Getter
+    @Setter
+    private String firstname;
+
+    @Getter
+    @Setter
+    private String lastname;
+
+    @Getter
+    @Setter
+    private String accountNumber;
+
+    @Getter
+    @Setter
+    private String customerNumber;
+
+<span class="fc" id="L67">    @Column(name = &quot;bundles&quot;)</span>
+    @Convert(converter = ListConverter.class)
+    @Getter
+    @Setter
+    private List&lt;String&gt; bundles = new ArrayList&lt;&gt;();
+
+    @Getter
+    @Setter
+    private String language;
+
+    @Getter
+    @Setter
+    private boolean deleted;
+
+    @Override
+    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
+<span class="fc" id="L83">        return new ArrayList&lt;&gt;();</span>
+    }
+
+    @Override
+    public String getPassword() {
+<span class="fc" id="L88">        return null;</span>
+    }
+
+    @Override
+    public void setCustomerNumber(String customerNumber) {
+<span class="fc" id="L93">        this.customerNumber = customerNumber;</span>
+<span class="fc" id="L94">    }</span>
+
+    @Override
+    public void setAccountNumber(String accountNumber) {
+<span class="fc" id="L98">        this.accountNumber = accountNumber;</span>
+<span class="fc" id="L99">    }</span>
+
+    @Override
+    public String getUsername() {
+<span class="fc" id="L103">        return username;</span>
+    }
+
+    @Override
+    public String getResetRequired() {
+<span class="fc" id="L108">        return null;</span>
+    }
+
+    @Override
+    public String getWrongLoginAttempts() {
+<span class="fc" id="L113">        return null;</span>
+    }
+
+    @Override
+    public String getExpireDate() {
+<span class="fc" id="L118">        return null;</span>
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+<span class="fc" id="L123">        return true;</span>
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+<span class="fc" id="L128">        return true;</span>
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+<span class="fc" id="L133">        return true;</span>
+    }
+
+    @Override
+    public boolean isEnabled() {
+<span class="fc" id="L138">        return true;</span>
+    }
+
+    /**
+     * @author WateMi02
+     *
+     * For sso users we must set the username to ssoId
+     * We do not receive a username from the UI
+     *
+     */
+    @PrePersist
+    @PreUpdate
+    private void prePersistFunction(){
+<span class="nc" id="L151">        this.username = SSO_USERNAME_PREFIX.concat(this.ssoId);</span>
+<span class="nc" id="L152">    }</span>
+    
+    public UserRequestResponse toUserRequestResponse() {
+<span class="fc" id="L155">        UserRequestResponse userRequestResponse = new UserRequestResponse();</span>
+<span class="fc" id="L156">        userRequestResponse.setSsoId(this.getSsoId());</span>
+<span class="fc" id="L157">        userRequestResponse.setPassword(this.getPassword());</span>
+<span class="fc" id="L158">        userRequestResponse.setBundles(this.getBundles());</span>
+<span class="fc" id="L159">        userRequestResponse.setEmail(this.getEmail());</span>
+<span class="fc" id="L160">        userRequestResponse.setFirstname(this.getFirstname());</span>
+<span class="fc" id="L161">        userRequestResponse.setLastname(this.getLastname());</span>
+<span class="fc" id="L162">        userRequestResponse.setLanguage(this.getLanguage());</span>
+<span class="fc" id="L163">        userRequestResponse.setSsoUser(true);</span>
+<span class="fc" id="L164">        userRequestResponse.setUsername(this.getUsername());</span>
+<span class="fc" id="L165">        RequestAccountDetails accountDetails = new RequestAccountDetails();</span>
+<span class="fc" id="L166">        accountDetails.setRequestAccount(this.getAccountNumber());</span>
+<span class="fc" id="L167">        accountDetails.setRequestCust(this.getCustomerNumber());</span>
+<span class="fc" id="L168">        userRequestResponse.setAccountDetails(accountDetails);</span>
+<span class="fc" id="L169">        userRequestResponse.setId(this.getId());</span>
+<span class="fc" id="L170">        return userRequestResponse;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LNAAUserGroup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.service.lnaa.beans</a> &gt; <span class="el_source">LNAAUserGroup.java</span></div><h1>LNAAUserGroup.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.service.lnaa.beans;
+
+import java.util.Objects;
+
+<span class="fc" id="L5">public class LNAAUserGroup {</span>
+
+    private String group_name;
+    
+    private String group_code;
+    
+    private String group_description;
+
+    public String getGroup_name() {
+<span class="fc" id="L14">        return group_name;</span>
+    }
+
+    public void setGroup_name(String group_name) {
+<span class="fc" id="L18">        this.group_name = group_name;</span>
+<span class="fc" id="L19">    }</span>
+
+    public String getGroup_code() {
+<span class="fc" id="L22">        return group_code;</span>
+    }
+
+    public void setGroup_code(String group_code) {
+<span class="fc" id="L26">        this.group_code = group_code;</span>
+<span class="fc" id="L27">    }</span>
+
+    public String getGroup_description() {
+<span class="fc" id="L30">        return group_description;</span>
+    }
+
+    public void setGroup_description(String group_description) {
+<span class="fc" id="L34">        this.group_description = group_description;</span>
+<span class="fc" id="L35">    }</span>
+    
+    @Override
+    public int hashCode() {
+<span class="fc" id="L39">        return Objects.hash(group_name, group_code, group_description);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">      if (this == o) {</span>
+<span class="fc" id="L45">        return true;</span>
+      }
+<span class="fc bfc" id="L47" title="All 4 branches covered.">      if (o == null || getClass() != o.getClass()) {</span>
+<span class="fc" id="L48">        return false;</span>
+      }
+<span class="fc" id="L50">      LNAAUserGroup comp = (LNAAUserGroup) o;</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">      return Objects.equals(this.group_name, comp.group_name)</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.group_code, comp.group_code)</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">              &amp;&amp; Objects.equals(this.group_description, comp.group_description);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L58">      StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L59">      sb.append(&quot;class LNAAUserGroup {\n&quot;);      </span>
+<span class="fc" id="L60">      sb.append(&quot;    group_name: &quot;).append(toIndentedString(group_name)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L61">      sb.append(&quot;    group_code: &quot;).append(toIndentedString(group_code)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L62">      sb.append(&quot;    group_description: &quot;).append(toIndentedString(group_description)).append(&quot;\n&quot;);</span>
+<span class="fc" id="L63">      sb.append(&quot;}&quot;);</span>
+<span class="fc" id="L64">      return sb.toString();</span>
+    }
+
+    /**
+     * Convert the given object to string with each line indented by 4 spaces
+     * (except the first line).
+     */
+    private String toIndentedString(Object o) {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">      if (o == null) {</span>
+<span class="fc" id="L73">        return &quot;null&quot;;</span>
+      }
+<span class="fc" id="L75">      return o.toString().replace(&quot;\n&quot;, &quot;\n    &quot;);</span>
+    }    
+        
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

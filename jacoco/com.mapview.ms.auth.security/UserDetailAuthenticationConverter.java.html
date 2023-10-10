@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserDetailAuthenticationConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.security</a> &gt; <span class="el_source">UserDetailAuthenticationConverter.java</span></div><h1>UserDetailAuthenticationConverter.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.security;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mapview.ms.auth.entity.AccessToken;
+import com.mapview.ms.auth.entity.UserAccountDetails;
+import com.mapview.ms.auth.entity.UserAccountDetailsBuilder;
+import com.mapview.ms.auth.entity.UserDetails;
+import com.mapview.ms.auth.entity.UserDetailsBuilder;
+import com.mapview.ms.auth.entity.UserRequestResponse;
+import com.mapview.ms.auth.entity.UserRequestResponseBuilder;
+import com.mapview.ms.auth.response.GetUserResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.provider.token.UserAuthenticationConverter;
+
+<span class="fc" id="L21">public class UserDetailAuthenticationConverter implements UserAuthenticationConverter {</span>
+	
+	private static final String SELECT_ROLE = &quot;select_role&quot;;
+	
+<span class="fc" id="L25">	private ObjectMapper objectMapper = new ObjectMapper();</span>
+
+	public Map&lt;String, ?&gt; convertUserAuthentication(Authentication authentication) {
+<span class="fc" id="L28">		Map&lt;String, Object&gt; response = new LinkedHashMap&lt;String, Object&gt;();</span>
+<span class="fc" id="L29">		response.put(USERNAME, authentication.getName());</span>
+<span class="fc" id="L30">		return response;</span>
+	}
+
+	public Authentication extractAuthentication(Map&lt;String, ?&gt; map) {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">		if (map.containsKey(USERNAME)) {</span>
+<span class="fc" id="L35">			AccessToken accessToken = objectMapper.convertValue(map, AccessToken.class);</span>
+<span class="fc" id="L36">			UserDetailInfo userDetailInfo =  this.userDetailInfoFactory(accessToken.getUserName(), accessToken.getCustomerNumber(), accessToken.getAccountNumber(), accessToken.getBundles(), accessToken.getLanguage());</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">			if (accessToken.getScope().contains(SELECT_ROLE)) {</span>
+<span class="fc" id="L38">				GetUserResponse userResponse = bindingGetUserResponse(accessToken);</span>
+<span class="fc" id="L39">				return new UsernamePasswordAuthenticationToken(userDetailInfo, &quot;N/A&quot;, Collections.singleton(userResponse));</span>
+			}
+<span class="fc" id="L41">			return new MvgUsernamePasswordAuthenticationToken(userDetailInfo, &quot;N/A&quot;, accessToken.getBundles());</span>
+		}
+<span class="fc" id="L43">		return null;</span>
+	}
+
+	private GetUserResponse bindingGetUserResponse(AccessToken accessToken) {
+<span class="fc" id="L47">		UserAccountDetails userAccountDetails = new UserAccountDetailsBuilder()</span>
+<span class="fc" id="L48">			.withResetPasswordRequired(String.valueOf(accessToken.getResetPasswordRequired()))</span>
+<span class="fc" id="L49">			.withWrongPasswordLoginAttempts(accessToken.getWrongPasswordLoginAttempts())</span>
+<span class="fc" id="L50">			.withPasswordExpireDate(accessToken.getPasswordExpireDate())</span>
+<span class="fc" id="L51">			.build();</span>
+
+<span class="fc" id="L53">		UserRequestResponse userRequestResponse = new UserRequestResponseBuilder()</span>
+<span class="fc" id="L54">			.withRoles(accessToken.getRoles())</span>
+<span class="fc" id="L55">			.withRoleBundles(accessToken.getRoleBundles())</span>
+<span class="fc" id="L56">			.withLanguage(accessToken.getLanguage())</span>
+<span class="fc" id="L57">			.build();</span>
+
+<span class="fc" id="L59">		UserDetails userDetails = new UserDetailsBuilder()</span>
+<span class="fc" id="L60">			.withUser(userRequestResponse)</span>
+<span class="fc" id="L61">			.withAccountDetails(userAccountDetails)</span>
+<span class="fc" id="L62">			.build();</span>
+
+<span class="fc" id="L64">		GetUserResponse userResponse = new GetUserResponse();</span>
+<span class="fc" id="L65">		userResponse.setUserDetails(userDetails);</span>
+<span class="fc" id="L66">		return userResponse;</span>
+	}
+	
+	public UserDetailInfo userDetailInfoFactory(String username, String customerNumber, String accountNumber, List&lt;String&gt; bundles, String language) {
+<span class="fc" id="L70">	    return new UserDetailInfo(username, customerNumber, accountNumber, bundles,language);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

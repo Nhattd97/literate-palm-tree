@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomOAuth2ExceptionTranslator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.security</a> &gt; <span class="el_source">CustomOAuth2ExceptionTranslator.java</span></div><h1>CustomOAuth2ExceptionTranslator.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.security;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.common.exceptions.InvalidGrantException;
+import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
+import org.springframework.security.oauth2.provider.error.DefaultWebResponseExceptionTranslator;
+
+import com.mapview.ms.auth.exceptions.LNAAAuthenticationException;
+
+<span class="fc" id="L11">public class CustomOAuth2ExceptionTranslator extends DefaultWebResponseExceptionTranslator {</span>
+    @Override
+    public ResponseEntity&lt;OAuth2Exception&gt; translate(Exception e) throws Exception {
+<span class="fc" id="L14">        ResponseEntity&lt;OAuth2Exception&gt; responseEntity = super.translate(e);</span>
+<span class="fc bfc" id="L15" title="All 2 branches covered.">        if (e instanceof LNAAAuthenticationException) {</span>
+<span class="fc" id="L16">            LNAAAuthenticationException ex = (LNAAAuthenticationException) e;</span>
+<span class="fc" id="L17">            ex.addAdditionalInformation(&quot;code&quot;, ex.getCode());</span>
+<span class="fc" id="L18">            ex.addAdditionalInformation(&quot;message&quot;, ex.getMessage());</span>
+<span class="fc" id="L19">            ex.addAdditionalInformation(&quot;responseId&quot;, ex.getResponseId());</span>
+<span class="fc" id="L20">            ex.addAdditionalInformation(&quot;timestamp&quot;, ex.getTimestamString());</span>
+<span class="fc" id="L21">            ex.addAdditionalInformation(&quot;passwordExpiredDate&quot;, ex.getPasswordExpiredDate());</span>
+<span class="fc" id="L22">            ex.addAdditionalInformation(&quot;wrongPasswordLoginAttempts&quot;, ex.getWrongPasswordLoginAttempts());</span>
+<span class="fc" id="L23">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L24">            headers.setAll(responseEntity.getHeaders().toSingleValueMap());</span>
+<span class="fc" id="L25">            return new ResponseEntity&lt;&gt;(ex, headers, responseEntity.getStatusCode());</span>
+        } else {
+<span class="fc" id="L27">            InvalidGrantException ex = (InvalidGrantException) e;</span>
+<span class="fc" id="L28">            return new ResponseEntity&lt;&gt;(ex, responseEntity.getStatusCode());</span>
+        }    
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

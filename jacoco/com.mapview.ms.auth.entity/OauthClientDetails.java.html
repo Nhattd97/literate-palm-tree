@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OauthClientDetails.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-server</a> &gt; <a href="index.source.html" class="el_package">com.mapview.ms.auth.entity</a> &gt; <span class="el_source">OauthClientDetails.java</span></div><h1>OauthClientDetails.java</h1><pre class="source lang-java linenums">package com.mapview.ms.auth.entity;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.provider.ClientDetails;
+import org.springframework.util.StringUtils;
+
+import com.mapview.ms.auth.annotations.ValidSpecialString;
+
+/**
+ * Entity with OauthClientDetails.
+ *
+ */
+
+@Entity
+@Table(name = &quot;oauth_client_details&quot;)
+public class OauthClientDetails implements ClientDetails {
+
+    private static final long serialVersionUID = -2640719988642673051L;
+    
+    @Id
+    @ValidSpecialString
+	private String clientId;
+    
+    @ValidSpecialString
+	private String resourceIds;
+	
+    @ValidSpecialString
+    private String clientSecret;
+
+    @ValidSpecialString
+    private String scope;
+	
+    @ValidSpecialString
+    private String authorizedGrantTypes;
+    
+    @ValidSpecialString
+	private String webServerRedirectUri;
+    
+    @ValidSpecialString
+    private String authorities;
+    
+    private Integer accessTokenValidity;
+    
+    private Integer refreshTokenValidity;
+
+    @ValidSpecialString
+    private String additionalInformation;
+
+    @ValidSpecialString
+    private String autoapprove;
+    
+    private Integer accessTokenValiditySeconds;
+    
+    private Integer refreshTokenValiditySeconds;
+    
+<span class="fc" id="L67">	public OauthClientDetails() {</span>
+<span class="fc" id="L68">	}</span>
+
+    OauthClientDetails(String clientId, String clientSecret, Integer accessTokenValiditySeconds, String scope, 
+<span class="fc" id="L71">            String authorizedGrantTypes, String webServerRedirectUri) {</span>
+<span class="fc" id="L72">        this.clientId = clientId;</span>
+<span class="fc" id="L73">        this.clientSecret = clientSecret;</span>
+<span class="fc" id="L74">        this.accessTokenValiditySeconds = accessTokenValiditySeconds;</span>
+<span class="fc" id="L75">        this.scope = scope;</span>
+<span class="fc" id="L76">        this.authorizedGrantTypes = authorizedGrantTypes;</span>
+<span class="fc" id="L77">        this.webServerRedirectUri = webServerRedirectUri;</span>
+<span class="fc" id="L78">    }</span>
+
+    public String getClientId() {
+<span class="fc" id="L81">        return clientId;</span>
+    }
+
+    public void setClientId(String clientId) {
+<span class="fc" id="L85">        this.clientId = clientId;</span>
+<span class="fc" id="L86">    }</span>
+
+    public Set&lt;String&gt; getResourceIds() {
+<span class="fc" id="L89">        return stringToSet(resourceIds);</span>
+    }
+
+    public void setResourceIds(Set&lt;String&gt; resourceIds) {
+<span class="fc" id="L93">        this.resourceIds = String.join(&quot;,&quot;, resourceIds);</span>
+<span class="fc" id="L94">    }</span>
+
+    public String getClientSecret() {
+<span class="fc" id="L97">        return clientSecret;</span>
+    }
+
+    public void setClientSecret(String clientSecret) {
+<span class="fc" id="L101">        this.clientSecret = clientSecret;</span>
+<span class="fc" id="L102">    }</span>
+
+    public Set&lt;String&gt; getScope() {
+<span class="fc" id="L105">        return stringToSet(scope);</span>
+    }
+    
+    public void setScope(String scope) {
+<span class="fc" id="L109">        this.scope = scope;</span>
+<span class="fc" id="L110">    }</span>
+
+    public Set&lt;String&gt; getAuthorizedGrantTypes() {
+<span class="fc" id="L113">        return stringToSet(authorizedGrantTypes);</span>
+    }
+    
+    public void setAuthorizedGrantTypes(String authorizedGrantTypes) {
+<span class="fc" id="L117">        this.authorizedGrantTypes = authorizedGrantTypes;</span>
+<span class="fc" id="L118">    }</span>
+
+    public String getWebServerRedirectUri() {
+<span class="fc" id="L121">        return webServerRedirectUri;</span>
+    }
+
+    public void setWebServerRedirectUri(String webServerRedirectUri) {
+<span class="fc" id="L125">        this.webServerRedirectUri = webServerRedirectUri;</span>
+<span class="fc" id="L126">    }</span>
+
+    public Collection&lt;GrantedAuthority&gt; getAuthorities() {
+<span class="fc" id="L129">        return Collections.emptyList();</span>
+    }
+
+    public Integer getAccessTokenValidity() {
+<span class="fc" id="L133">        return accessTokenValidity;</span>
+    }
+
+    public void setAccessTokenValidity(Integer accessTokenValidity) {
+<span class="fc" id="L137">        this.accessTokenValidity = accessTokenValidity;</span>
+<span class="fc" id="L138">    }</span>
+
+    public Integer getRefreshTokenValidity() {
+<span class="fc" id="L141">        return refreshTokenValidity;</span>
+    }
+
+    public void setRefreshTokenValidity(Integer refreshTokenValidity) {
+<span class="fc" id="L145">        this.refreshTokenValidity = refreshTokenValidity;</span>
+<span class="fc" id="L146">    }</span>
+
+    public Map&lt;String, Object&gt; getAdditionalInformation() {
+<span class="nc" id="L149">        return new HashMap&lt;String, Object&gt;();</span>
+    }
+    
+    public void setAdditionalInformation(String additionalInformacion) {
+<span class="nc" id="L153">        this.additionalInformation = additionalInformacion;</span>
+<span class="nc" id="L154">    }</span>
+
+    public String getAutoapprove() {
+<span class="fc" id="L157">        return autoapprove;</span>
+    }
+
+    public void setAutoapprove(String autoapprove) {
+<span class="fc" id="L161">        this.autoapprove = autoapprove;</span>
+<span class="fc" id="L162">    }</span>
+
+    public Integer getAccessTokenValiditySeconds() {
+<span class="fc" id="L165">        return accessTokenValiditySeconds;</span>
+    }
+
+    public void setAccessTokenValiditySeconds(Integer accessTokenValiditySeconds) {
+<span class="fc" id="L169">        this.accessTokenValiditySeconds = accessTokenValiditySeconds;</span>
+<span class="fc" id="L170">    }</span>
+
+    public Integer getRefreshTokenValiditySeconds() {
+<span class="fc" id="L173">        return refreshTokenValiditySeconds;</span>
+    }
+
+    public void setRefreshTokenValiditySeconds(Integer refreshTokenValiditySeconds) {
+<span class="fc" id="L177">        this.refreshTokenValiditySeconds = refreshTokenValiditySeconds;</span>
+<span class="fc" id="L178">    }</span>
+    
+    @Override
+    public boolean isSecretRequired() {
+<span class="fc" id="L182">        return false;</span>
+    }
+
+    @Override
+    public boolean isScoped() {
+<span class="fc" id="L187">        return false;</span>
+    }
+
+    @Override
+    public Set&lt;String&gt; getRegisteredRedirectUri() {
+<span class="fc" id="L192">        return null;</span>
+    }
+
+    @Override
+    public boolean isAutoApprove(String scope) {
+<span class="fc" id="L197">        return false;</span>
+    }
+    
+    @Override
+    public String toString() {
+<span class="fc" id="L202">        return &quot;OauthClientDetails [clientId=&quot; + clientId + &quot;, resourceIds=&quot; + resourceIds + &quot;, scope=&quot; + scope</span>
+                + &quot;, authorizedGrantTypes=&quot; + authorizedGrantTypes + &quot;, webServerRedirectUri=&quot; + webServerRedirectUri
+                + &quot;, authorities=&quot; + authorities + &quot;, accessTokenValidity=&quot; + accessTokenValidity
+                + &quot;, refreshTokenValidity=&quot; + refreshTokenValidity + &quot;, additionalInformation=&quot; + additionalInformation
+                + &quot;, autoapprove=&quot; + autoapprove + &quot;, accessTokenValiditySeconds=&quot; + accessTokenValiditySeconds
+                + &quot;, refreshTokenValiditySeconds=&quot; + refreshTokenValiditySeconds + &quot;]&quot;;
+    }
+
+    /**
+     * Returns an instance of OauthClientDetailsBuilder for creating the OauthClientDetails object
+     * 
+     * @return
+     */
+    public static OauthClientDetailsBuilder builder() {
+<span class="fc" id="L216">        return new OauthClientDetailsBuilder();</span>
+    }
+    
+    private static Set&lt;String&gt; stringToSet(String value) {
+<span class="fc" id="L220">        Set&lt;String&gt; set = new HashSet&lt;String&gt;();</span>
+<span class="fc bfc" id="L221" title="All 2 branches covered.">        if (!StringUtils.isEmpty(value)) {</span>
+<span class="fc" id="L222">            set = Set.of(value.replace(&quot; &quot;, &quot;&quot;).split(&quot;,&quot;));</span>
+        }
+<span class="fc" id="L224">        return set;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
